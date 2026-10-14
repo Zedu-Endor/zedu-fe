@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowBtn, OutlineBtn } from "./Button";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
@@ -52,9 +53,22 @@ export const PricingCard = ({
   ctaVariant,
   variant,
   badgeText,
-}: PricingCardProps) => {
   const isPopular = variant === "popular";
   const router = useRouter();
+  const [token, setToken] = useState<string | null>(null);
+  const [orgSlug, setOrgSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    setToken(window.localStorage.getItem("token"));
+    setOrgSlug(window.localStorage.getItem("orgSlug"));
+  }, []);
+
+  const effectiveCtaHref =
+    isPopular
+      ? token && orgSlug
+        ? `/${orgSlug}/settings/organisation/billing/all-plans`
+        : ctaHref || "/auth/sign-up?plan=pro"
+      : ctaHref;
 
   return (
     <article
@@ -89,7 +103,7 @@ export const PricingCard = ({
       {ctaVariant === "filled" ? (
         <ArrowBtn
           text={ctaText}
-          href={ctaHref}
+          href={effectiveCtaHref}
           className="w-full justify-center"
           hideArrow
         />
@@ -98,7 +112,7 @@ export const PricingCard = ({
           text={ctaText}
           className="w-full"
           onClick={() => {
-            if (ctaHref) router.push(ctaHref);
+            if (effectiveCtaHref) router.push(effectiveCtaHref);
           }}
         />
       )}
