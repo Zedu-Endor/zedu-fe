@@ -53,6 +53,7 @@ export const PricingCard = ({
   ctaVariant,
   variant,
   badgeText,
+}: PricingCardProps) => {
   const isPopular = variant === "popular";
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
@@ -63,12 +64,11 @@ export const PricingCard = ({
     setOrgSlug(window.localStorage.getItem("orgSlug"));
   }, []);
 
-  const effectiveCtaHref =
-    isPopular
-      ? token && orgSlug
-        ? `/${orgSlug}/settings/organisation/billing/all-plans`
-        : ctaHref || "/auth/sign-up?plan=pro"
-      : ctaHref;
+  const effectiveCtaHref = isPopular
+    ? token && orgSlug
+      ? `/${orgSlug}/settings/organisation/billing/all-plans`
+      : ctaHref || "/auth/sign-up?plan=pro"
+    : ctaHref;
 
   return (
     <article
