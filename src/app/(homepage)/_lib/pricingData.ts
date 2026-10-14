@@ -59,7 +59,7 @@ const staticPricingCards: PricingCardData[] = [
       { text: "Admin moderation tools", enabled: true },
     ],
     ctaText: "Start Pro Plan",
-    ctaHref: "/auth/sign-up?plan=pro",
+    ctaHref: "/auth/sign-up",
     ctaVariant: "filled",
     variant: "popular",
     badgeText: "Most Popular",
