@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import { ACTIONS } from "~/store/Actions";
 import Loading from "~/components/ui/loading";
 import { UnarchiveChannelDialog } from "./unarchive-channel";
+import { LeaveChannelDialog } from "./leave-channel-dialog";
 import GlobalSearch from "../global-search";
 import moment from "moment";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -28,11 +29,16 @@ import {
 
 export function AboutTabContainer({ setIsOpen }: any) {
   const [buttonLoading, setButtonLoading] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   const params = useParams();
   const id = params.id as string;
   const { state, dispatch } = useContext(DataContext);
   const { channelDetails } = state;
+  // channelDetails can still hold the previous channel while the new one loads,
+  // so only use it when it belongs to the channel in the URL.
+  const detailsMatch =
+    String(channelDetails?.channels_id || "") === String(id || "");
 
   const handleLeave = async () => {
     setButtonLoading(true);
@@ -42,6 +48,7 @@ export function AboutTabContainer({ setIsOpen }: any) {
       dispatch({
         type: ACTIONS.CHANNEL_CALLBACK,
       });
+      setLeaveOpen(false);
       setIsOpen(false);
     }
     setButtonLoading(false);
@@ -103,13 +110,22 @@ export function AboutTabContainer({ setIsOpen }: any) {
 
       <div className="py-4 px-5 flex justify-between items-center">
         <Button
-          onClick={handleLeave}
+          onClick={() => setLeaveOpen(true)}
           className="flex items-center text-[#D31103] font-bold p-0 h-fit gap-2"
         >
           Leave channel
-          {buttonLoading && <Loading color="red" height="15px" width="15px" />}
         </Button>
       </div>
+
+      <LeaveChannelDialog
+        open={leaveOpen}
+        onOpenChange={setLeaveOpen}
+        channelName={detailsMatch ? channelDetails?.name : undefined}
+        isPrivate={detailsMatch ? channelDetails?.is_private : undefined}
+        loading={buttonLoading}
+        confirmDisabled={!detailsMatch}
+        onConfirm={handleLeave}
+      />
     </div>
   );
 }
