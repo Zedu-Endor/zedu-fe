@@ -1,4 +1,4 @@
-import { LucidePhone, Phone, Star, X } from "lucide-react";
+import { Bell, LucidePhone, Phone, Star, X } from "lucide-react";
 import { useContext } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -77,9 +77,14 @@ const ProfileSidebar = ({ user }: any) => {
             <ProfileStatus user={user} />
 
             <div className="flex gap-[10px] items-center">
-              <BellSimpleSlashIcon color="#475467" />
+              {user?.pause_notification ? (
+                <BellSimpleSlashIcon color="#475467" />
+              ) : (
+                <Bell className="size-5 text-[#475467]" strokeWidth={1.5} />
+              )}
               <p className="text-[15px] text-[#344054]">
-                {user?.online ? "Online" : "Away"}, Notifications snoozed
+                {user?.online ? "Online" : "Away"}
+                {user?.pause_notification && ", Notifications snoozed"}
               </p>
             </div>
             {user?.timezone && (
