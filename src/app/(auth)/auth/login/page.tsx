@@ -14,6 +14,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import AppleSignin from "react-apple-signin-auth";
 import { Separator } from "~/components/ui/separator";
 import { Eye, EyeOff } from "lucide-react";
+import { FloatingLabelInput } from "~/components/ui/input";
 
 //
 
@@ -356,69 +357,37 @@ function Login() {
           </div>
           <form onSubmit={handleSubmit} className="w-full">
             <div className="flex flex-col gap-[16px]">
-              <div className="w-full flex flex-col gap-[8px] relative">
-                <label
-                  htmlFor="email"
-                  className="text-[14px] font-[400] leading-[21px]"
-                >
-                  Email address
-                </label>
-                <div className="w-full flex flex-col gap-[2px]">
-                  <input
-                    type="text"
-                    value={email}
-                    onChange={handleEmailChange}
-                    onBlur={handleEmailBlur}
-                    placeholder="Enter your email"
-                    className={`w-full text-[14px] text-[#667085] leading-[15.12px] font-[500] h-[48px] border ${
-                      errors.email ? "border-[#F81404]" : "border-[#D0D0FD]"
-                    } outline-none rounded-md py-[13px] pl-[13px]`}
-                  />
-                  {errors.email && (
-                    <small className="text-[12px] text-[#F81404]">
-                      {errors.email}
-                    </small>
-                  )}
-                </div>
-              </div>
-              <div className="w-full flex flex-col gap-[8px] relative">
-                <label
-                  htmlFor="password"
-                  className="text-[14px] font-[400] leading-[21px]"
-                >
-                  Password
-                </label>
-                <div className="w-full flex flex-col gap-[2px]">
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={handlePasswordChange}
-                      placeholder="Password"
-                      className={`w-full text-[14px] text-[#667085] leading-[15.12px] font-[500] h-[48px] border ${
-                        errors.password
-                          ? "border-[#F81404]"
-                          : "border-[#D0D0FD]"
-                      } outline-none rounded-md py-[13px] pl-[13px] pr-[40px]`}
-                    />
-                    <button
-                      type="button"
-                      onClick={togglePasswordVisibility}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#667085] focus:outline-none"
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <small className="text-[12px] text-[#F81404]">
-                      {errors.password}
-                    </small>
-                  )}
-                </div>
-              </div>
+              <FloatingLabelInput
+                type="text"
+                label="Email address"
+                value={email}
+                onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
+                error={errors.email}
+                id="email"
+                autoComplete="email"
+              />
+              <FloatingLabelInput
+                type={showPassword ? "text" : "password"}
+                label="Password"
+                value={password}
+                onChange={handlePasswordChange}
+                error={errors.password}
+                id="password"
+                autoComplete="current-password"
+                icon={
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="text-[#667085] focus:outline-none"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+              />
             </div>
             <div className="mt-[10px] flex justify-between mb-[32px]">
               <div className="flex flex-row gap-[4px] items-center">
