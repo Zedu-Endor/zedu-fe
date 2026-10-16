@@ -21,17 +21,21 @@ export default function CentrifugoWakeSync() {
       const now = Date.now();
       if (now - lastSyncAtRef.current < RESYNC_DEBOUNCE_MS) return;
       lastSyncAtRef.current = now;
-      ensureCentrifugeConnected();
+      ensureCentrifugeConnected(true);
     };
 
-    const scheduleReconnect = () => {
+    const scheduleReconnect = (immediate = false) => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(reconnect, RESYNC_DEBOUNCE_MS);
+      if (immediate) {
+        reconnect();
+      } else {
+        timer = setTimeout(reconnect, RESYNC_DEBOUNCE_MS);
+      }
     };
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        scheduleReconnect();
+        scheduleReconnect(true);
       }
     };
 
@@ -39,11 +43,11 @@ export default function CentrifugoWakeSync() {
       // Only force reconnect after bfcache restore; normal shows are
       // already covered by visibilitychange.
       if (event.persisted) {
-        scheduleReconnect();
+        scheduleReconnect(true);
       }
     };
 
-    const onOnline = () => scheduleReconnect();
+    const onOnline = () => scheduleReconnect(true);
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("pageshow", onPageShow);
