@@ -329,6 +329,9 @@ const MessageBox = ({
 
     if (subscription) {
       editor.commands.clearContent();
+      // clearContent() doesn't emit "update", so drop the saved draft here or
+      // the sent text comes back from localStorage after a refresh.
+      saveMessageDraft(draftKeyRef.current, "", true);
       setMedia([]);
       setMedias([]);
       setVoiceThumbnails([]);
