@@ -521,13 +521,13 @@ const MessageBox = ({
         />
       )}
 
-      <div className="relative mx-3 md:mx-5 pb-3">
+      <div className="relative mx-3 md:mx-5 pb-3 max-w-full">
         <div
           onClick={() => !channelLoading && editor && editor.commands.focus()}
           onDragOver={handleDragOver}
           onDrop={channelLoading ? undefined : handleDrop}
           aria-disabled={channelLoading}
-          className={`bg-white border rounded-xl border-[#E6EAEF] overflow-hidden ${state?.reply ? "sm:right-[520px] right-0" : "right-0"} ${editor?.isFocused ? "border-primary-400" : "border-gray-200"} ${channelLoading ? "pointer-events-none opacity-60" : ""}`}
+          className={`bg-white border rounded-xl border-[#E6EAEF] overflow-hidden w-full max-w-full ${state?.reply ? "sm:right-[520px] right-0" : "right-0"} ${editor?.isFocused ? "border-primary-400" : "border-gray-200"} ${channelLoading ? "pointer-events-none opacity-60" : ""}`}
         >
           {showFormatting && (
             <div className="border-b border-[#E6EAEF] flex items-center gap-2 bg-[#F9FAFB] pl-3 pr-4 py-[5px]">
@@ -701,10 +701,10 @@ const MessageBox = ({
             </div>
           )}
 
-          <div className="md:flex-1 relative px-3">
+          <div className="md:flex-1 relative px-3 min-w-0 max-w-full overflow-hidden">
             <EditorContent
               editor={editor}
-              className="py-2 rounded-md flex flex-row overflow-auto"
+              className="py-2 rounded-md w-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden"
               onKeyDown={handleKeyDown}
             />
 
