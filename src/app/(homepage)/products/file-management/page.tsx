@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { ogImageUrl, siteUrl } from "~/lib/env-urls";
 import Image from "next/image";
-import { ArrowBtn } from "../../_components/ui/Button";
+import { ArrowBtn, OutlineBtn } from "../../_components/ui/Button";
 import { FeaturedCard } from "../../_components/ui/FeaturedCard";
 import { DynamicFooter } from "../../_components/footer/dynamic-footer";
 import { FAQSection } from "../../_components/home/FAQSection";
@@ -102,11 +102,11 @@ const otherFeatures = [
   {
     title: "Channels",
     description: "Share course files directly inside class discussions.",
-    icon: "/images/homepage/icons/file-management.png",
+    icon: "/images/homepage/icons/messaging-system.png",
   },
   {
     icon: "/images/homepage/icons/AI-class-note.png",
-    title: "Ai Agents",
+    title: "AI Agents",
     description: "Summarize documents and highlight key information.",
   },
   {
@@ -166,6 +166,7 @@ const FileManagementProductsPage = () => {
             linkToHome
             className="justify-center"
           />
+          <OutlineBtn text="Watch demo" href="#features" />
         </div>
         <div className="w-full max-w-6xl overflow-hidden rounded-2xl">
           <div className="relative aspect-[16/10]  w-full sm:aspect-[16/9] lg:aspect-[2/1] ">
@@ -180,7 +181,10 @@ const FileManagementProductsPage = () => {
           </div>
         </div>
       </section>
-      <section className="relative isolate flex w-full flex-col items-center gap-4 overflow-hidden px-4 py-10 text-center sm:gap-6 sm:px-8 sm:py-16  lg:gap-8 lg:px-12">
+      <section
+        id="features"
+        className="relative isolate flex w-full flex-col items-center gap-4 overflow-hidden px-4 py-10 text-center sm:gap-6 sm:px-8 sm:py-16  lg:gap-8 lg:px-12"
+      >
         <h1 className="text-2xl font-semibold leading-tight text-neutral-900 sm:text-4xl md:text-5xl text-center">
           Organize and Collaborate on Learning Files
         </h1>
