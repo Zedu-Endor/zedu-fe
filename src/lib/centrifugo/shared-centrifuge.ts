@@ -19,6 +19,7 @@ export async function getConnectionToken(): Promise<string> {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      timeout: 10000,
     }
   );
   return response.data.data.token;
@@ -35,6 +36,7 @@ export async function getSubscriptionToken(channel: string): Promise<string> {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      timeout: 10000,
     }
   );
 

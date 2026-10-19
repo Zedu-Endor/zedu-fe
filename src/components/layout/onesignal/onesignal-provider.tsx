@@ -17,6 +17,8 @@ import { DataContext } from "~/store/GlobalState";
 import { ACTIONS } from "~/store/Actions";
 import { openBuzzInNewTab } from "~/lib/buzz/open-buzz-tab";
 import { ensureCentrifugeConnected } from "~/lib/centrifugo/ensure-connected";
+import images from "~/assets/images";
+import { closeCallNotification } from "~/lib/notifications/call-notification";
 
 const getString = (value: unknown): string | null =>
   typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -33,7 +35,9 @@ const isMessageLikeNotification = (data: Record<string, unknown>) => {
     type === "dm" ||
     type === "mention" ||
     type === "channel" ||
-    type.includes("message")
+    type.includes("message") ||
+    type.includes("buzz") ||
+    type.includes("call")
   ) {
     return true;
   }
@@ -42,7 +46,9 @@ const isMessageLikeNotification = (data: Record<string, unknown>) => {
     getString(data.channel_id) ||
     getString(data.channels_id) ||
     getString(data.thread_id) ||
-    getString(data.message_id)
+    getString(data.message_id) ||
+    getString(data.buzz_id) ||
+    getString(data.buzzId)
   );
 };
 
@@ -132,7 +138,7 @@ export default function OneSignalProvider() {
   const resyncMessagesFromPush = (data: Record<string, unknown>) => {
     if (!dispatch || !isMessageLikeNotification(data)) return;
 
-    ensureCentrifugeConnected();
+    ensureCentrifugeConnected(true);
     dispatch({ type: ACTIONS.HOME_DMS_CALLBACK });
     dispatch({ type: ACTIONS.TRIGGER_CALLBACK });
   };
@@ -152,7 +158,64 @@ export default function OneSignalProvider() {
       const foregroundData = getNotificationData(event?.notification);
       resyncMessagesFromPush(foregroundData);
 
-      if (foregroundData?.notification_type === "direct_call_initialized") {
+      const notifType = (
+        getString(foregroundData?.notification_type) ||
+        getString(foregroundData?.event) ||
+        ""
+      ).toLowerCase();
+
+      const isCallInitiated =
+        notifType === "direct_call_initiated" ||
+        notifType === "direct_call_initialized" ||
+        notifType === "incoming_call" ||
+        notifType === "direct_call_incoming";
+
+      const isCallCanceled =
+        notifType === "direct_call_canceled" ||
+        notifType === "direct_call_cancelled" ||
+        notifType === "direct_call_cancel" ||
+        notifType === "direct_call_ended";
+
+      if (isCallInitiated) {
+        const callerName =
+          getString(foregroundData?.caller_name) ||
+          getString(foregroundData?.callerName) ||
+          getString(foregroundData?.sender_name) ||
+          getString(foregroundData?.username) ||
+          "Someone";
+        const avatarUrl =
+          getString(foregroundData?.avatar_url) ||
+          getString(foregroundData?.avatarUrl) ||
+          getString(foregroundData?.default_avatar_url) ||
+          images.user;
+        const channelId =
+          getString(foregroundData?.channel_id) ||
+          getString(foregroundData?.channelId) ||
+          "";
+        const buzzId =
+          getString(foregroundData?.buzz_id) ||
+          getString(foregroundData?.buzzId) ||
+          getString(foregroundData?.buzz_code) ||
+          "";
+        const callerId =
+          getString(foregroundData?.caller_id) ||
+          getString(foregroundData?.callerId) ||
+          getString(foregroundData?.sender_id) ||
+          "";
+
+        dispatch({
+          type: ACTIONS.SHOW_INCOMING_CALL_POPUP,
+          payload: {
+            callerName,
+            avatarUrl,
+            channelId,
+            buzzId,
+            callerId,
+          },
+        });
+
+        ensureCentrifugeConnected(true);
+
         if (audioPlayer.current) {
           audioPlayer.current.currentTime = 0;
           audioPlayer.current.play().catch(() => {
@@ -163,7 +226,14 @@ export default function OneSignalProvider() {
         }
       }
 
-      if (foregroundData?.notification_type === "direct_call_canceled") {
+      if (isCallCanceled) {
+        dispatch({ type: ACTIONS.HIDE_INCOMING_CALL_POPUP });
+        const buzzId =
+          getString(foregroundData?.buzz_id) ||
+          getString(foregroundData?.buzzId) ||
+          getString(foregroundData?.buzz_code) ||
+          "";
+        closeCallNotification(buzzId);
         if (audioPlayer.current) {
           audioPlayer.current.pause();
           audioPlayer.current.currentTime = 0;
