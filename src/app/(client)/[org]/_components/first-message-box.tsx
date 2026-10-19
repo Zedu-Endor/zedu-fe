@@ -239,7 +239,7 @@ const FirstMessageBox = ({ sendMessage }: any) => {
     <>
       <div
         onClick={() => editor && editor.commands.focus()}
-        className={`bg-white border rounded-xl mx-3 md:mx-5 border-[#E6EAEF]`}
+        className={`bg-white border rounded-xl mx-3 md:mx-5 border-[#E6EAEF] overflow-hidden max-w-full`}
       >
         {showFormatting && (
           <div className="border-b border-[#E6EAEF] flex items-center gap-2 bg-[#F9FAFB] pl-3 pr-4 py-[5px]">
@@ -383,10 +383,10 @@ const FirstMessageBox = ({ sendMessage }: any) => {
           </div>
         )}
 
-        <div className="md:flex-1 relative px-3">
+        <div className="md:flex-1 relative px-3 min-w-0 max-w-full overflow-hidden">
           <EditorContent
             editor={editor}
-            className="py-2 rounded-md flex flex-row overflow-auto"
+            className="py-2 rounded-md w-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden"
             onKeyDown={handleKeyDown}
           />
 

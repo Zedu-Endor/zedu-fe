@@ -118,7 +118,7 @@ const EditReplyMessageBox = ({ subscription, sendMessage }: any) => {
     <>
       <div
         // onMouseLeave={() => handleTyping(false)}
-        className={`bg-white border rounded border-[#E6EAEF] w-full ${state?.reply ? "right-[520px]" : "right-0"}`}
+        className={`bg-white border rounded border-[#E6EAEF] w-full max-w-full overflow-hidden ${state?.reply ? "right-[520px]" : "right-0"}`}
       >
         {showFormatting && (
           <div className="border-b border-[#E6EAEF] flex items-center gap-2 mb-2 bg-[#F9FAFB] pl-3 pr-4 py-[5px]">
@@ -272,10 +272,10 @@ const EditReplyMessageBox = ({ subscription, sendMessage }: any) => {
           </div>
         )}
 
-        <div className="flex-1 relative px-3">
+        <div className="flex-1 relative px-3 min-w-0 max-w-full overflow-hidden">
           <EditorContent
             editor={editor}
-            className="py-2 rounded-md flex flex-row overflow-auto"
+            className="py-2 rounded-md w-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden"
             onKeyDown={handleKeyDown}
           />
         </div>
