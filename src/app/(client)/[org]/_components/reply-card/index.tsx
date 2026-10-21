@@ -26,7 +26,17 @@ type ReplySummaryProps = {
   lastReplyTime: string;
   handleReply: any;
 };
-
+/**
+    * Renders the reply summary beneath a thread: the avatars of users who
+    * replied, the total reply count (singularised as "reply" / "replies"),
+    * and the relative time of the last reply. Clicking it opens the thread.
+    *
+    * @param users - Users who have replied, rendered as avatars.
+    * @param totalReplies - Total number of replies on the thread.
+    * @param lastReplyTime - Timestamp of the most recent reply (shown as relative time).
+    * @param handleReply - Callback fired when the reply summary is clicked.
+    * @returns The reply-summary UI element for a thread.
+    */
 export default function ReplyCard({
   users,
   totalReplies,
@@ -93,7 +103,7 @@ export default function ReplyCard({
       {visibleUsers?.length > 0 && (
         <>
           <span className="text-blue-600 hover:underline cursor-pointer ml-2">
-            {totalReplies} replies
+            {totalReplies} {totalReplies === 1 ? "reply" : "replies"}
           </span>
           <span className="text-gray-500 ml-1">
             Last reply {timeformat(lastReplyTime)}
