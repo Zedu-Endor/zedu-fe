@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RequirePermission } from "~/components/rbac/RequirePermission";
 import { appStoreUrl, playStoreUrl } from "~/lib/env-urls";
+import SignOutDialog from "../sign-out-dialog";
 interface Props {
   name?: string;
 }
@@ -28,10 +29,7 @@ export default function OrganisationMenu({ name }: Props) {
   const [subMenu, setSubMenu] = useState(false);
   const pathname = usePathname();
 
-  const handleLogout = async () => {
-    localStorage.clear();
-    window.location.href = "/auth/login";
-  };
+  const [showSignOut, setShowSignOut] = useState(false);
 
   //
 
@@ -138,7 +136,7 @@ export default function OrganisationMenu({ name }: Props) {
               )}
             </li>
             <li
-              onClick={handleLogout}
+              onClick={() => setShowSignOut(true)}
               className="hover:bg-blue-500 hover:text-white cursor-pointer px-4 py-2 font-medium text-[15px]"
             >
               Sign out
@@ -146,6 +144,7 @@ export default function OrganisationMenu({ name }: Props) {
           </ul>
         </PopoverContent>
       </Popover>
+      <SignOutDialog open={showSignOut} onOpenChange={setShowSignOut} />
     </div>
   );
 }

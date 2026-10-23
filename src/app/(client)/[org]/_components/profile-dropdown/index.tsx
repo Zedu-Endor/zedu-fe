@@ -14,6 +14,7 @@ import { ACTIONS } from "~/store/Actions";
 import StatusModal from "../status";
 import { PostRequest } from "~/utils/new-request";
 import Link from "next/link";
+import SignOutDialog from "../sign-out-dialog";
 
 interface ProfileDropdownProps {
   user: any;
@@ -37,11 +38,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ user }) => {
     dispatch({ type: ACTIONS.SHOW_USER_PROFILE, payload: true });
   };
 
-  // logout user
-  const handleLogout = async () => {
-    localStorage.clear();
-    window.location.href = "/auth/login";
-  };
+  const [showSignOut, setShowSignOut] = useState(false);
 
   // clear status
   const handleClear = async () => {
@@ -259,7 +256,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ user }) => {
           </Link>
 
           <DropdownMenuItem
-            onClick={handleLogout}
+            onClick={() => setShowSignOut(true)}
             className="px-5 py-2 cursor-pointer hover:bg-blue-500 hover:text-white"
           >
             <span>Sign out</span>
@@ -268,6 +265,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ user }) => {
       </DropdownMenu>
 
       <StatusModal />
+      <SignOutDialog open={showSignOut} onOpenChange={setShowSignOut} />
     </div>
   );
 };
