@@ -18,6 +18,10 @@ import {
   prepareChannelSubscription,
   releaseChannelSubscription,
 } from "~/lib/centrifugo/shared-centrifuge";
+import {
+  showCallNotification,
+  closeCallNotification,
+} from "~/lib/notifications/call-notification";
 
 const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL;
 
@@ -30,10 +34,12 @@ export default function GeneralNotificationConnection() {
   const params = useParams();
   const id = params.id as string;
   const pathnameRef = useRef(pathname);
+  const idRef = useRef(id);
 
   useEffect(() => {
     pathnameRef.current = pathname;
-  }, [pathname]);
+    idRef.current = id;
+  }, [pathname, id]);
 
   const routeUrl = `${CLIENT_URL}${pathname}`;
   const audioPlayer = useRef<HTMLAudioElement | null>(null);
@@ -48,6 +54,11 @@ export default function GeneralNotificationConnection() {
     hasJoinedRef.current = state.hasJoined;
   }, [state.hasJoined]);
 
+  const userRef = useRef(state?.user);
+  useEffect(() => {
+    userRef.current = state?.user;
+  }, [state?.user]);
+
   useEffect(() => {
     // ask for permission early on
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -59,12 +70,23 @@ export default function GeneralNotificationConnection() {
     }
   }, []);
 
+  const resolvedUserId = state?.user?.id || state?.user?.user_id;
+
   // centrifugo connection for notification
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!orgId || !user?.id) return;
+    let fallbackUserId = "";
+    if (!resolvedUserId && typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(localStorage.getItem("user") || "{}");
+        fallbackUserId = stored?.id || stored?.user_id || "";
+      } catch {
+        // ignore invalid stored user JSON in fallback
+      }
+    }
+    const userId = resolvedUserId || fallbackUserId;
+    if (!orgId || !userId) return;
 
-    const channel = `${orgId}/${user.id}`;
+    const channel = `${orgId}/${userId}`;
     const centrifugeClient = getSharedCentrifuge();
     const sub = prepareChannelSubscription(centrifugeClient, channel, {
       getToken: () => getSubscriptionToken(channel),
@@ -205,7 +227,7 @@ export default function GeneralNotificationConnection() {
       }
 
       if (result.notification_type === "buzz_started") {
-        if (id === String(result.data?.channel_id)) {
+        if (idRef.current === String(result.data?.channel_id)) {
           const active_buzz = {
             buzz_id: result.data?.buzz_id,
             host_id: result.data?.host_id,
@@ -219,7 +241,7 @@ export default function GeneralNotificationConnection() {
           });
         }
       } else if (result.notification_type === "buzz_ended") {
-        if (id === String(result.data?.channel_id)) {
+        if (idRef.current === String(result.data?.channel_id)) {
           dispatch({
             type: ACTIONS.REMOVE_ACTIVE_BUZZ,
           });
@@ -227,18 +249,54 @@ export default function GeneralNotificationConnection() {
       }
 
       // Handle incoming call event
-      if (result?.notification_type === "direct_call_initiated") {
-        const callInfo = result?.data;
+      const notifType = String(
+        result?.notification_type ||
+          result?.event ||
+          result?.data?.notification_type ||
+          result?.data?.event ||
+          ""
+      ).toLowerCase();
+
+      const isCallInitiated =
+        notifType === "direct_call_initiated" ||
+        notifType === "direct_call_initialized" ||
+        notifType === "incoming_call" ||
+        notifType === "direct_call_incoming";
+
+      if (isCallInitiated) {
+        const rawCall = result?.data || result?.payload || result;
+        const callerName =
+          rawCall?.caller_name ||
+          rawCall?.callerName ||
+          rawCall?.sender_name ||
+          rawCall?.username ||
+          "Someone";
+        const avatarUrl =
+          rawCall?.avatar_url ||
+          rawCall?.avatarUrl ||
+          rawCall?.default_avatar_url ||
+          images.user;
+        const channelId = rawCall?.channel_id || rawCall?.channelId || "";
+        const buzzId =
+          rawCall?.buzz_id || rawCall?.buzzId || rawCall?.buzz_code || "";
+        const callerId = rawCall?.caller_id || rawCall?.callerId || "";
+
         dispatch({
           type: ACTIONS.SHOW_INCOMING_CALL_POPUP,
           payload: {
-            callerName: callInfo.caller_name,
-            avatarUrl:
-              callInfo.avatar_url || callInfo.default_avatar_url || images.user,
-            channelId: callInfo.channel_id,
-            buzzId: callInfo.buzz_id,
-            callerId: callInfo.caller_id,
+            callerName,
+            avatarUrl,
+            channelId,
+            buzzId,
+            callerId,
           },
+        });
+
+        // Trigger native browser notification if user is in another tab/app
+        showCallNotification({
+          callerName,
+          avatarUrl,
+          buzzId,
         });
       }
 
@@ -255,6 +313,7 @@ export default function GeneralNotificationConnection() {
 
         if (joinStatus === "accept" || joinStatus === "accepted") {
           dispatch({ type: ACTIONS.HIDE_INCOMING_CALL_POPUP });
+          closeCallNotification(payload?.buzz_id || payload?.buzzId);
         }
 
         if (
@@ -295,7 +354,10 @@ export default function GeneralNotificationConnection() {
             payload: updatedParticipants,
           });
 
-          if (String(newUser.user_id) !== String(user?.user_id)) {
+          if (
+            String(newUser.user_id) !==
+            String(userRef.current?.user_id || userRef.current?.id)
+          ) {
             playBuzzParticipantJoinSound({
               joiningUserId: newUser.user_id,
               isInCall: hasJoinedRef.current,
@@ -322,7 +384,10 @@ export default function GeneralNotificationConnection() {
             payload: updatedParticipants,
           });
 
-          if (String(rejectedUser.user_id) !== String(user?.user_id)) {
+          if (
+            String(rejectedUser.user_id) !==
+            String(userRef.current?.user_id || userRef.current?.id)
+          ) {
             showInfo(
               "Buzz Declined",
               `${rejectedUser.username || "A participant"} declined the buzz`
@@ -342,7 +407,10 @@ export default function GeneralNotificationConnection() {
             payload: updatedParticipants,
           });
 
-          if (String(timeoutUser.user_id) !== String(user?.user_id)) {
+          if (
+            String(timeoutUser.user_id) !==
+            String(userRef.current?.user_id || userRef.current?.id)
+          ) {
             showInfo(
               "Buzz Timeout",
               `${timeoutUser.username || "A participant"} didn't respond to the buzz`
@@ -351,9 +419,22 @@ export default function GeneralNotificationConnection() {
         }
       }
 
-      // Handle direct call canceled: hide popup only
-      if (result?.notification_type === "direct_call_canceled") {
+      // Handle direct call canceled: hide popup and close native notification
+      const isCallCanceled =
+        notifType === "direct_call_canceled" ||
+        notifType === "direct_call_cancelled" ||
+        notifType === "direct_call_cancel" ||
+        notifType === "direct_call_ended";
+
+      if (isCallCanceled) {
         dispatch({ type: ACTIONS.HIDE_INCOMING_CALL_POPUP });
+        const cancelBuzzId =
+          result?.data?.buzz_id ||
+          result?.data?.buzzId ||
+          result?.data?.buzz_code ||
+          result?.buzz_id ||
+          result?.buzzId;
+        closeCallNotification(cancelBuzzId);
       }
 
       if (
@@ -393,8 +474,9 @@ export default function GeneralNotificationConnection() {
       sub.off("publication", onPublication);
       sub.off("error", onError);
       releaseChannelSubscription(centrifugeClient, channel, sub);
+      closeCallNotification();
     };
-  }, [dispatch, orgId, id]);
+  }, [dispatch, orgId, resolvedUserId]);
 
   //
 
