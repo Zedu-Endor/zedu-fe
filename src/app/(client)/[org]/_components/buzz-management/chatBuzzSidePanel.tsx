@@ -98,16 +98,44 @@ const ChatBuzzSidePanel: React.FC<buzzSidePanelProps> = ({ onClose }) => {
 
   const handleTimeoutLeave = useCallback(async () => {
     await handleLeave();
-    await handleEndBuzz();
+    const isHost = Boolean(
+      buzzData?.host_id &&
+      (buzzData.host_id === user?.user_id || buzzData.host_id === user?.id)
+    );
+    if (isHost) {
+      await handleEndBuzz();
+    }
     clearParticipants();
     resetBuzzUiState();
-  }, [handleLeave, handleEndBuzz, resetBuzzUiState]);
+  }, [
+    buzzData?.host_id,
+    user?.user_id,
+    user?.id,
+    handleLeave,
+    handleEndBuzz,
+    resetBuzzUiState,
+  ]);
 
   const handleTimeoutEnd = useCallback(async () => {
-    await handleEndBuzz();
+    const isHost = Boolean(
+      buzzData?.host_id &&
+      (buzzData.host_id === user?.user_id || buzzData.host_id === user?.id)
+    );
+    if (isHost) {
+      await handleEndBuzz();
+    } else {
+      await handleLeave();
+    }
     clearParticipants();
     resetBuzzUiState();
-  }, [handleEndBuzz, resetBuzzUiState]);
+  }, [
+    buzzData?.host_id,
+    user?.user_id,
+    user?.id,
+    handleEndBuzz,
+    handleLeave,
+    resetBuzzUiState,
+  ]);
 
   // Cancel call before anyone joins (ringing)
   const handleCancelCall = useCallback(async () => {
