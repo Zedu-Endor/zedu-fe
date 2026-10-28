@@ -76,6 +76,7 @@ jobs:
           owner: zeduchat
           repositories: zedu-fe
           permission-contents: write
+          permission-workflows: write
           permission-pull-requests: write
           permission-issues: write
 

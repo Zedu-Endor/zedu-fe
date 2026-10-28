@@ -20,6 +20,7 @@
     "email": "release-bot@zedu-hng.local"
   },
   "releaseLabel": "release",
+  "releaseMention": "@Ayodejioladimeji",
   "maxAttempts": 3,
   "tagReleases": true,
   "protected": [
