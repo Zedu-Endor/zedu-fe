@@ -115,8 +115,8 @@ const People = () => {
       >
         {!isLargeScreen && channels.length > 0 && !defaultChannel ? (
           <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-8">
-            <div className="w-full max-w-md rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-              <h2 className="mb-4 text-center text-xl font-semibold text-blue-500">
+            <div className="w-full max-w-md rounded-2xl border border-blue-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#1A1D21]">
+              <h2 className="mb-4 text-center text-xl font-semibold text-blue-500 dark:text-zinc-200">
                 Open channels
               </h2>
 
@@ -132,10 +132,10 @@ const People = () => {
                       key={channelId}
                       type="button"
                       onClick={() => handleSelectChannel(channelId)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 text-left transition hover:border-blue-200 hover:bg-blue-100"
+                      className="flex w-full items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-3 text-left transition hover:border-blue-200 hover:bg-blue-100 dark:border-white/10 dark:bg-[#222529] dark:hover:border-white/20 dark:hover:bg-[#2A2F36]"
                     >
-                      <HashIcon className="size-4 text-blue-500" />
-                      <span className="truncate text-sm font-medium text-blue-700">
+                      <HashIcon className="size-4 text-blue-500 dark:text-zinc-300" />
+                      <span className="truncate text-sm font-medium text-blue-700 dark:text-zinc-200">
                         {channel?.name || "Untitled channel"}
                       </span>
                     </button>
