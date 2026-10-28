@@ -13,6 +13,7 @@ import useFirstChannel from "../../home/channels/hooks/first-channel";
 import StepIndicator from "~/components/ui/step-indicator";
 import { RegisterWebhookRequest } from "~/utils/webhook-request";
 import { provisionTemplateChannels } from "~/data/templates";
+import { toast } from "sonner";
 import { showError } from "~/components/toast/sonner";
 import {
   redirectAfterOrgSwitch,
@@ -42,6 +43,8 @@ const CreateOrganization: React.FC = () => {
   const { firstChannel } = useFirstChannel();
   const { org } = useParams<{ org: string }>();
   const [createdOrg, setCreatedOrg] = useState<any>(null);
+  const [templateProvisionFailed, setTemplateProvisionFailed] = useState(false);
+  const createdOrgRef = useRef<any>(null);
   const hasSentOnboardingWebhook = useRef(false);
 
   // check if a user is onboarded
@@ -160,6 +163,32 @@ const CreateOrganization: React.FC = () => {
   };
 
   /**
+   * Skips template provisioning, clears selected template, and switches into the created organization.
+   */
+  const handleSkipTemplate = async () => {
+    setButtonloding(true);
+    setTemplateProvisionFailed(false);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("selected_template");
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("template");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      } catch {
+        // ignore url cleanup failure
+      }
+    }
+    const target = createdOrgRef.current || createdOrg;
+    const token = localStorage.getItem("token") || "";
+    if (!target?.id) {
+      setButtonloding(false);
+      return;
+    }
+    sendOnboardingWebhook();
+    await switchToOrganisation(target, token);
+  };
+
+  /**
    * Handles form submission to create an organization and provision template channels.
    * @param event Form submission event.
    */
@@ -169,16 +198,29 @@ const CreateOrganization: React.FC = () => {
     const token = localStorage.getItem("token") || "";
 
     setButtonloding(true);
+    setTemplateProvisionFailed(false);
 
     if (createdOrg?.id) {
-      const provisioned = await provisionTemplateChannels(
-        createdOrg.id,
-        searchParams.get("template"),
-        token
-      );
+      createdOrgRef.current = createdOrg;
+      let provisioned = false;
+      try {
+        provisioned = await provisionTemplateChannels(
+          createdOrg.id,
+          searchParams.get("template"),
+          token
+        );
+      } catch {
+        provisioned = false;
+      }
 
       if (!provisioned) {
-        showError("Failed to set up template channels. Please try again.");
+        setTemplateProvisionFailed(true);
+        toast.error("Failed to set up template channels. Please try again.", {
+          action: {
+            label: "Skip template",
+            onClick: handleSkipTemplate,
+          },
+        });
         setButtonloding(false);
         return;
       }
@@ -203,15 +245,27 @@ const CreateOrganization: React.FC = () => {
       const newOrg = res?.data?.data;
       localStorage.setItem("orgId", newOrg?.id);
       setCreatedOrg(newOrg);
+      createdOrgRef.current = newOrg;
 
-      const provisioned = await provisionTemplateChannels(
-        newOrg?.id,
-        searchParams.get("template"),
-        token
-      );
+      let provisioned = false;
+      try {
+        provisioned = await provisionTemplateChannels(
+          newOrg?.id,
+          searchParams.get("template"),
+          token
+        );
+      } catch {
+        provisioned = false;
+      }
 
       if (!provisioned) {
-        showError("Failed to set up template channels. Please try again.");
+        setTemplateProvisionFailed(true);
+        toast.error("Failed to set up template channels. Please try again.", {
+          action: {
+            label: "Skip template",
+            onClick: handleSkipTemplate,
+          },
+        });
         setButtonloding(false);
         return;
       }
@@ -299,6 +353,24 @@ const CreateOrganization: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {templateProvisionFailed && (
+                  <div className="my-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-500 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <span>
+                      Failed to set up template channels. Please try again.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={buttonloading}
+                      onClick={handleSkipTemplate}
+                      className="shrink-0 border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                    >
+                      Skip template
+                    </Button>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
