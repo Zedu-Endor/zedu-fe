@@ -123,6 +123,7 @@ export const useOrganisationUsers = (
   const [searchTotalItems, setSearchTotalItems] = useState(0);
   const searchPageRef = useRef(0);
   const searchInflightRef = useRef<Set<number>>(new Set());
+  const searchGenerationRef = useRef(0);
 
   const orgMembersRef = useRef(state.orgMembers);
   const prevOrgIdRef = useRef(orgId);
@@ -209,6 +210,7 @@ export const useOrganisationUsers = (
       if (!orgId || !query.trim()) return;
       if (searchInflightRef.current.has(pageNumber)) return;
 
+      const generation = searchGenerationRef.current;
       searchInflightRef.current.add(pageNumber);
       setSearchLoading(true);
 
@@ -216,6 +218,8 @@ export const useOrganisationUsers = (
         const response = await GetRequest(
           buildUsersUrl(orgId, pageNumber, query)
         );
+
+        if (generation !== searchGenerationRef.current) return;
 
         if (response?.status === 200 || response?.status === 201) {
           const newUsers = response?.data?.data || [];
@@ -240,8 +244,10 @@ export const useOrganisationUsers = (
           );
         }
       } finally {
-        searchInflightRef.current.delete(pageNumber);
-        setSearchLoading(false);
+        if (generation === searchGenerationRef.current) {
+          searchInflightRef.current.delete(pageNumber);
+          setSearchLoading(searchInflightRef.current.size > 0);
+        }
       }
     },
     [orgId]
@@ -275,32 +281,45 @@ export const useOrganisationUsers = (
     }
   }, [orgId, enabled, isSearching, fetchBrowseUsers, state.orgCallback]);
 
+  // Invalidate pending responses as soon as the input or organisation changes,
+  // including the period before the next search value is debounced.
+  useEffect(() => {
+    searchGenerationRef.current += 1;
+    searchInflightRef.current.clear();
+    searchPageRef.current = 0;
+    setSearchUsers([]);
+    setSearchLoading(false);
+    setSearchHasMore(false);
+    setSearchTotalItems(0);
+  }, [orgId, enabled, trimmedSearch]);
+
   // Search mode: refetch when debounced query changes
   useEffect(() => {
-    if (!enabled || !orgId) return;
+    if (!enabled || !orgId || !isSearching || isDebouncing) return;
 
-    if (!isSearching) {
-      setSearchUsers([]);
-      setSearchHasMore(false);
-      setSearchTotalItems(0);
-      searchPageRef.current = 0;
-      searchInflightRef.current.clear();
-      return;
-    }
-
+    searchGenerationRef.current += 1;
     searchPageRef.current = 0;
     searchInflightRef.current.clear();
     setSearchUsers([]);
+    setSearchLoading(false);
     setSearchHasMore(true);
     setSearchTotalItems(0);
-    fetchSearchUsers(1, true, debouncedSearch.trim());
-  }, [orgId, enabled, isSearching, debouncedSearch, fetchSearchUsers]);
+    fetchSearchUsers(1, true, trimmedDebounced);
+  }, [
+    orgId,
+    enabled,
+    isSearching,
+    isDebouncing,
+    trimmedDebounced,
+    fetchSearchUsers,
+  ]);
 
   const loadMore = useCallback(() => {
     if (!orgId) return;
 
-    if (isSearching) {
-      if (searchLoading || !searchHasMore || isDebouncing) return;
+    if (hasSearchInput) {
+      if (!isSearching || searchLoading || !searchHasMore || isDebouncing)
+        return;
       const nextPage = searchPageRef.current + 1;
       fetchSearchUsers(nextPage, false, debouncedSearch.trim());
       return;
@@ -312,6 +331,7 @@ export const useOrganisationUsers = (
     fetchBrowseUsers(orgPagination.loadedPage + 1, false);
   }, [
     orgId,
+    hasSearchInput,
     isSearching,
     isDebouncing,
     searchLoading,
@@ -331,9 +351,13 @@ export const useOrganisationUsers = (
 
   return {
     loading: hasSearchInput ? isDebouncing || searchLoading : loading,
-    hasMore: isSearching && !isDebouncing ? searchHasMore : hasMore,
+    hasMore: hasSearchInput ? !isDebouncing && searchHasMore : hasMore,
     loadMore,
-    totalItems: isSearching && !isDebouncing ? searchTotalItems : totalItems,
+    totalItems: hasSearchInput
+      ? isDebouncing
+        ? 0
+        : searchTotalItems
+      : totalItems,
     users,
     isSearching: hasSearchInput,
   };
