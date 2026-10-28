@@ -22,6 +22,8 @@ import {
 
 import { isAutoCreatedOrg } from "~/utils/organisation";
 
+const PENDING_TEMPLATE_ORG_STORAGE = "pending_template_org";
+
 // initial states
 const initialState = {
   organisationName: "",
@@ -42,25 +44,50 @@ const CreateOrganization: React.FC = () => {
   const [country, setCountry] = useState<any>(null);
   const { firstChannel } = useFirstChannel();
   const { org } = useParams<{ org: string }>();
-  const [createdOrg, setCreatedOrg] = useState<any>(null);
-  const [templateProvisionFailed, setTemplateProvisionFailed] = useState(false);
-  const createdOrgRef = useRef<any>(null);
+  const [createdOrg, setCreatedOrg] = useState<any>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [templateProvisionFailed, setTemplateProvisionFailed] =
+    useState<boolean>(() => {
+      if (typeof window === "undefined") return false;
+      try {
+        return Boolean(sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE));
+      } catch {
+        return false;
+      }
+    });
+  const createdOrgRef = useRef<any>(createdOrg);
   const hasSentOnboardingWebhook = useRef(false);
 
   // check if a user is onboarded
   useEffect(() => {
     (async () => {
       const token = localStorage.getItem("token") || "";
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTemplate =
+        urlParams.get("template") || localStorage.getItem("selected_template");
+      const hasPendingOrg = Boolean(
+        sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE)
+      );
 
       const userstatus = await GetRequest("/auth/onboard-status", token);
 
-      if (userstatus?.data?.data?.status && !isAutoCreatedOrg()) {
+      if (
+        userstatus?.data?.data?.status &&
+        !isAutoCreatedOrg() &&
+        !activeTemplate &&
+        !hasPendingOrg
+      ) {
         router.push(`/${org}`);
       } else {
         setLoading(false);
       }
-
-      setLoading(false);
     })();
   }, [router, org]);
 
@@ -120,6 +147,12 @@ const CreateOrganization: React.FC = () => {
         showError("Couldn't open your new organisation. Try again.");
       setButtonloding(false);
       return;
+    }
+
+    try {
+      sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
+    } catch {
+      // ignore storage cleanup failure
     }
 
     const organisation = result?.data?.data?.organisation;
@@ -200,13 +233,19 @@ const CreateOrganization: React.FC = () => {
     setButtonloding(true);
     setTemplateProvisionFailed(false);
 
+    const activeTemplate =
+      searchParams.get("template") ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("selected_template")
+        : null);
+
     if (createdOrg?.id) {
       createdOrgRef.current = createdOrg;
       let provisioned = false;
       try {
         provisioned = await provisionTemplateChannels(
           createdOrg.id,
-          searchParams.get("template"),
+          activeTemplate,
           token
         );
       } catch {
@@ -223,6 +262,12 @@ const CreateOrganization: React.FC = () => {
         });
         setButtonloding(false);
         return;
+      }
+
+      try {
+        localStorage.removeItem("selected_template");
+      } catch {
+        // ignore storage cleanup failure
       }
 
       sendOnboardingWebhook();
@@ -243,6 +288,16 @@ const CreateOrganization: React.FC = () => {
       await PutRequest("/auth/onboard-status", {}, token);
 
       const newOrg = res?.data?.data;
+      if (newOrg?.id) {
+        try {
+          sessionStorage.setItem(
+            PENDING_TEMPLATE_ORG_STORAGE,
+            JSON.stringify(newOrg)
+          );
+        } catch {
+          // ignore storage write failure
+        }
+      }
       localStorage.setItem("orgId", newOrg?.id);
       setCreatedOrg(newOrg);
       createdOrgRef.current = newOrg;
@@ -251,7 +306,7 @@ const CreateOrganization: React.FC = () => {
       try {
         provisioned = await provisionTemplateChannels(
           newOrg?.id,
-          searchParams.get("template"),
+          activeTemplate,
           token
         );
       } catch {
@@ -268,6 +323,12 @@ const CreateOrganization: React.FC = () => {
         });
         setButtonloding(false);
         return;
+      }
+
+      try {
+        localStorage.removeItem("selected_template");
+      } catch {
+        // ignore storage cleanup failure
       }
 
       sendOnboardingWebhook(res?.data?.message);
