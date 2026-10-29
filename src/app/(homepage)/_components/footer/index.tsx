@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
@@ -135,6 +135,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  // #1407: ties the visible label and any error message to the email field.
+  const newsletterId = useId();
+  const newsletterErrorId = `${newsletterId}-error`;
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
@@ -187,14 +190,19 @@ const Footer = () => {
               onSubmit={handleSubmit}
               className="flex w-full flex-col gap-4"
             >
-              <label className="font-medium text-white/95">
+              <label htmlFor={newsletterId} className="font-medium text-white/95">
                 Sign up to our Newsletter
               </label>
               <div>
                 <div className="flex h-14 w-full items-center justify-between gap-2 rounded-xl bg-white p-1.5">
                   <input
+                    id={newsletterId}
                     type="email"
                     name="newsletter"
+                    required
+                    autoComplete="email"
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? newsletterErrorId : undefined}
                     placeholder="johndoe@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -210,7 +218,11 @@ const Footer = () => {
                     ) : null}
                   </button>
                 </div>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                {error && (
+                  <p id={newsletterErrorId} role="alert" className="text-red-500 text-sm mt-2">
+                    {error}
+                  </p>
+                )}
               </div>
             </form>
 
