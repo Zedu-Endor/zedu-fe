@@ -456,7 +456,7 @@ function Login() {
                   <Button
                     type="submit"
                     variant="ghost"
-                    className="w-fit text-startß !p-0 border-none border-[#8760f8] text-[#8760f8] bg-white h-2"
+                    className="w-fit text-start !p-0 border-none border-[#8760f8] text-[#8760f8] bg-white h-2"
                   >
                     Login with magic link
                   </Button>
