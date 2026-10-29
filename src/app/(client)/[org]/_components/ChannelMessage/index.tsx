@@ -15,6 +15,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import ChannelIntro from "../channel-intro";
 import Thread from "./thread";
 import Message from "./message";
+import { MessageListSkeleton } from "./channel-loading-skeleton";
 import EditMessageBox from "../message-box/edit";
 import UserAvatar from "~/components/layout/user-avatar";
 import { GetRequest, PutRequest } from "~/utils/new-request";
@@ -217,6 +218,8 @@ const ChannelsMessage = () => {
         onScrollToBottom={getData}
         className="bottom-[calc(var(--chat-composer-height,140px)+16px)] right-6"
       />
+
+      {loading && !messages?.length && <MessageListSkeleton />}
 
       <div
         id="scrollableDivs"

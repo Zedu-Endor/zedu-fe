@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { DataContext } from "~/store/GlobalState";
 import { ACTIONS } from "~/store/Actions";
 import { setMessageHighlight } from "~/utils/message-highlight";
+import { resolveSearchDeepLink } from "~/lib/search/navigate";
 
 /** Options for the useMessageDeepLink hook. */
 interface UseMessageDeepLinkOptions {
@@ -118,6 +119,24 @@ export function useMessageDeepLink({
       preparedRef.current = signature;
     }
 
+    const isFromSearch = searchParams.get("from") === "search";
+    if (isFromSearch) {
+      const resolution = resolveSearchDeepLink(
+        threadId,
+        messageId,
+        messages,
+        loading
+      );
+      if (resolution.status === "pending") return;
+
+      if (resolution.status === "reply") {
+        dispatch({ type: ACTIONS.THREAD, payload: resolution.parent });
+        dispatch({ type: ACTIONS.REPLY, payload: true });
+      }
+      appliedRef.current = signature;
+      return;
+    }
+
     if (parentThread) {
       if (shouldOpenDrawer) {
         dispatch({ type: ACTIONS.THREAD, payload: parentThread });
@@ -171,5 +190,13 @@ export function useMessageDeepLink({
         appliedRef.current = signature;
       }
     }
-  }, [channelId, threadId, messageId, messages, loading, dispatch]);
+  }, [
+    channelId,
+    threadId,
+    messageId,
+    searchParams,
+    messages,
+    loading,
+    dispatch,
+  ]);
 }
