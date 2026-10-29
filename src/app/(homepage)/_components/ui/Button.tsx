@@ -16,25 +16,30 @@ export const OutlineBtn = ({
   className?: string;
   href?: string;
 }) => {
-  const button = (
+  const buttonClassName = cn(
+    "inline-flex items-center justify-center border border-primary-500 text-blue-100 ease-in px-4 py-2.5 sm:px-6 sm:py-3 font-medium rounded-full transition-colors duration-100 hover:bg-primary-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+    className
+  );
+
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={buttonClassName}>
+        {text}
+      </Link>
+    );
+  }
+
+  return (
     <button
+      type="button"
       onClick={onClick}
-      className={cn(
-        "border border-primary-500 text-blue-100 ease-in px-4 py-2.5 sm:px-6 sm:py-3 font-medium rounded-full transition-colors duration-100 hover:bg-primary-500 hover:text-white",
-        className
-      )}
+      disabled={!onClick}
+      className={buttonClassName}
     >
       {text}
     </button>
   );
-
-  if (href) {
-    return <Link href={href}>{button}</Link>;
-  }
-
-  return button;
 };
-
 export const ArrowBtn = ({
   text,
   className,
