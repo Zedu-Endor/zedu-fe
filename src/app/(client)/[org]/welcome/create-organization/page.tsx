@@ -13,6 +13,7 @@ import useFirstChannel from "../../home/channels/hooks/first-channel";
 import StepIndicator from "~/components/ui/step-indicator";
 import { RegisterWebhookRequest } from "~/utils/webhook-request";
 import { provisionTemplateChannels } from "~/data/templates";
+import { toast } from "sonner";
 import { showError } from "~/components/toast/sonner";
 import {
   redirectAfterOrgSwitch,
@@ -20,6 +21,8 @@ import {
 } from "~/utils/org-switch";
 
 import { isAutoCreatedOrg } from "~/utils/organisation";
+
+const PENDING_TEMPLATE_ORG_STORAGE = "pending_org";
 
 // initial states
 const initialState = {
@@ -41,23 +44,50 @@ const CreateOrganization: React.FC = () => {
   const [country, setCountry] = useState<any>(null);
   const { firstChannel } = useFirstChannel();
   const { org } = useParams<{ org: string }>();
-  const [createdOrg, setCreatedOrg] = useState<any>(null);
+  const [createdOrg, setCreatedOrg] = useState<any>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [templateProvisionFailed, setTemplateProvisionFailed] =
+    useState<boolean>(() => {
+      if (typeof window === "undefined") return false;
+      try {
+        return Boolean(sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE));
+      } catch {
+        return false;
+      }
+    });
+  const createdOrgRef = useRef<any>(createdOrg);
   const hasSentOnboardingWebhook = useRef(false);
 
   // check if a user is onboarded
   useEffect(() => {
     (async () => {
       const token = localStorage.getItem("token") || "";
+      const urlParams = new URLSearchParams(window.location.search);
+      const activeTemplate =
+        urlParams.get("template") || localStorage.getItem("selected_template");
+      const hasPendingOrg = Boolean(
+        sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE)
+      );
 
       const userstatus = await GetRequest("/auth/onboard-status", token);
 
-      if (userstatus?.data?.data?.status && !isAutoCreatedOrg()) {
+      if (
+        userstatus?.data?.data?.status &&
+        !isAutoCreatedOrg() &&
+        !activeTemplate &&
+        !hasPendingOrg
+      ) {
         router.push(`/${org}`);
       } else {
         setLoading(false);
       }
-
-      setLoading(false);
     })();
   }, [router, org]);
 
@@ -119,6 +149,12 @@ const CreateOrganization: React.FC = () => {
       return;
     }
 
+    try {
+      sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
+    } catch {
+      // ignore storage cleanup failure
+    }
+
     const organisation = result?.data?.data?.organisation;
     localStorage.setItem("token", result?.data?.data?.access_token);
     localStorage.setItem("orgId", organisation?.id || target?.id);
@@ -160,6 +196,32 @@ const CreateOrganization: React.FC = () => {
   };
 
   /**
+   * Skips template provisioning, clears selected template, and switches into the created organization.
+   */
+  const handleSkipTemplate = async () => {
+    setButtonloding(true);
+    setTemplateProvisionFailed(false);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("selected_template");
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("template");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      } catch {
+        // ignore url cleanup failure
+      }
+    }
+    const target = createdOrgRef.current || createdOrg;
+    const token = localStorage.getItem("token") || "";
+    if (!target?.id) {
+      setButtonloding(false);
+      return;
+    }
+    sendOnboardingWebhook();
+    await switchToOrganisation(target, token);
+  };
+
+  /**
    * Handles form submission to create an organization and provision template channels.
    * @param event Form submission event.
    */
@@ -169,18 +231,43 @@ const CreateOrganization: React.FC = () => {
     const token = localStorage.getItem("token") || "";
 
     setButtonloding(true);
+    setTemplateProvisionFailed(false);
+
+    const activeTemplate =
+      searchParams.get("template") ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("selected_template")
+        : null);
 
     if (createdOrg?.id) {
-      const provisioned = await provisionTemplateChannels(
-        createdOrg.id,
-        searchParams.get("template"),
-        token
-      );
+      createdOrgRef.current = createdOrg;
+      let provisioned = false;
+      try {
+        provisioned = await provisionTemplateChannels(
+          createdOrg.id,
+          activeTemplate,
+          token
+        );
+      } catch {
+        provisioned = false;
+      }
 
       if (!provisioned) {
-        showError("Failed to set up template channels. Please try again.");
+        setTemplateProvisionFailed(true);
+        toast.error("Failed to set up template channels. Please try again.", {
+          action: {
+            label: "Skip template",
+            onClick: handleSkipTemplate,
+          },
+        });
         setButtonloding(false);
         return;
+      }
+
+      try {
+        localStorage.removeItem("selected_template");
+      } catch {
+        // ignore storage cleanup failure
       }
 
       sendOnboardingWebhook();
@@ -201,19 +288,47 @@ const CreateOrganization: React.FC = () => {
       await PutRequest("/auth/onboard-status", {}, token);
 
       const newOrg = res?.data?.data;
+      if (newOrg?.id) {
+        try {
+          sessionStorage.setItem(
+            PENDING_TEMPLATE_ORG_STORAGE,
+            JSON.stringify(newOrg)
+          );
+        } catch {
+          // ignore storage write failure
+        }
+      }
       localStorage.setItem("orgId", newOrg?.id);
       setCreatedOrg(newOrg);
+      createdOrgRef.current = newOrg;
 
-      const provisioned = await provisionTemplateChannels(
-        newOrg?.id,
-        searchParams.get("template"),
-        token
-      );
+      let provisioned = false;
+      try {
+        provisioned = await provisionTemplateChannels(
+          newOrg?.id,
+          activeTemplate,
+          token
+        );
+      } catch {
+        provisioned = false;
+      }
 
       if (!provisioned) {
-        showError("Failed to set up template channels. Please try again.");
+        setTemplateProvisionFailed(true);
+        toast.error("Failed to set up template channels. Please try again.", {
+          action: {
+            label: "Skip template",
+            onClick: handleSkipTemplate,
+          },
+        });
         setButtonloding(false);
         return;
+      }
+
+      try {
+        localStorage.removeItem("selected_template");
+      } catch {
+        // ignore storage cleanup failure
       }
 
       sendOnboardingWebhook(res?.data?.message);
@@ -299,6 +414,24 @@ const CreateOrganization: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {templateProvisionFailed && (
+                  <div className="my-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-500 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <span>
+                      Failed to set up template channels. Please try again.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={buttonloading}
+                      onClick={handleSkipTemplate}
+                      className="shrink-0 border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                    >
+                      Skip template
+                    </Button>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
