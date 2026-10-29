@@ -239,7 +239,7 @@ const Footer = () => {
 
             <div className="space-y-4">
               <p className="text-white/90">
-                Mobile App is available on Google PlayStore and AppStore
+                Mobile App is available on Google Play Store and the App Store
               </p>
               <div className="mt-5 flex flex-wrap items-start gap-8 text-white">
                 {appStoreLinks.map((store) => (
