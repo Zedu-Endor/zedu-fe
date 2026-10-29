@@ -194,10 +194,11 @@ function enableSigning() {
 function assertVerified(sha) {
   if (!SIGNING_KEY) return;
 
+  // The candidate is pushed to the upstream repo, so ask about it there.
   const result = run(
     "gh",
-    ["api", `repos/${FORK}/commits/${sha}`, "--jq", ".commit.verification"],
-    { allowFail: true, env: { GH_TOKEN: FORK_TOKEN } }
+    ["api", `repos/${UPSTREAM}/commits/${sha}`, "--jq", ".commit.verification"],
+    { allowFail: true }
   );
 
   if (result.status !== 0) {
@@ -567,71 +568,94 @@ function prepare() {
   );
 }
 
-function releaseTitle() {
-  return `release: ${FORK_OWNER} ${WORK} -> ${UPSTREAM_REPO}:${TARGET}`;
-}
-
-function buildPrBody(state) {
+function releaseTitle(state) {
   const range = `upstream/${TARGET}..${state.rcSha}`;
-  const mergeLines = gitOut(["log", "--merges", "--format=%s", range])
+  const subjects = gitOut(["log", "--no-merges", "--format=%s", range])
     .split("\n")
     .filter(Boolean)
-    .filter((line) => !/sync\//i.test(line));
-  const pullNumbers = [
-    ...new Set(
-      [...mergeLines.join("\n").matchAll(/Merge pull request #(\d+)/g)].map(
-        (match) => match[1]
-      )
-    ),
-  ];
-  const commits = gitOut(["log", "--no-merges", "--format=- %s (`%h`)", range])
-    .split("\n")
-    .filter(
-      (line) => line && !/\[skip release\]|chore\((sync|release)\)/i.test(line)
-    )
-    .slice(0, 80);
+    .filter((line) => !/\[skip release\]|chore\((sync|release)\)/i.test(line));
+  const count = (pattern) =>
+    subjects.filter((line) => pattern.test(line)).length;
+  const parts = [
+    [count(/^feat/), "feature", "features"],
+    [count(/^fix|^hotfix/), "fix", "fixes"],
+    [count(/^perf/), "performance", "performance"],
+    [count(/^(docs|chore|ci|build|refactor|test|style)/), "chore", "chores"],
+  ]
+    .filter(([total]) => total > 0)
+    .map(([total, one, many]) => `${total} ${total === 1 ? one : many}`);
 
-  const pullList =
-    pullNumbers.length > 0
-      ? pullNumbers.map((number) => `- #${number}`).join("\n")
-      : "- No pull requests detected in this range.";
-  const commitList =
-    commits.length > 0
-      ? commits.join("\n")
-      : "- No commits detected in this range.";
+  return `chore: release candidate - ${
+    parts.length > 0 ? parts.join(", ") : "no application changes"
+  }`;
+}
+
+// Mirrors the release PRs the maintainers have been opening by hand: what is
+// being promoted, the commits grouped by type, and how to merge it.
+function buildPrBody(state) {
+  const range = `upstream/${TARGET}..${state.rcSha}`;
+  const entries = gitOut(["log", "--no-merges", "--format=%h%x09%s", range])
+    .split("\n")
+    .filter(Boolean)
+    .filter((line) => !/\[skip release\]|chore\((sync|release)\)/i.test(line))
+    .map((line) => {
+      const [sha, ...rest] = line.split("\t");
+      return { sha, subject: rest.join("\t") };
+    });
+
+  const groups = [
+    { title: "Features", match: /^feat/ },
+    { title: "Fixes", match: /^fix|^hotfix/ },
+    { title: "Performance", match: /^perf/ },
+    { title: "Docs / chore", match: /^(docs|chore|refactor|style|test)/ },
+    { title: "CI", match: /^(ci|build)/ },
+  ].map((group) => ({
+    ...group,
+    entries: entries.filter((entry) => group.match.test(entry.subject)),
+  }));
+
+  const section = (title, list) =>
+    list.length === 0
+      ? []
+      : [
+          title,
+          "",
+          ...list.map((entry) => `- \`${entry.sha}\` ${entry.subject}`),
+          "",
+        ];
+
+  const shortstat = gitOut([
+    "diff",
+    "--shortstat",
+    `upstream/${TARGET}..${state.rcSha}`,
+  ]);
+  const commits = entries.length;
 
   return [
-    "## Release summary",
+    `## Release candidate: \`${FORK}:${STAGING}\` → \`${UPSTREAM}:${TARGET}\``,
     "",
-    `- Source branch: \`${FORK}:${STAGING}\` at \`${state.csSha}\``,
-    `- Work branch: \`${FORK}:${WORK}\` at \`${state.devSha}\``,
-    `- Base: \`${UPSTREAM}:${TARGET}\` at \`${state.targetSha}\``,
-    `- Release head: \`${FORK}:${state.branch}\` at \`${state.rcSha}\``,
-    `- Generated: ${state.generatedAt}`,
-    "- Sync checks: 0 commits behind target; contains the latest work branch; protected paths verified.",
+    `Promotes everything merged into \`${WORK}\` since the last release to \`${TARGET}\`.` +
+      ` \`${FORK}:${STAGING}\` is 0 behind \`${UPSTREAM}:${TARGET}\`; this brings the` +
+      ` ${commits} ${WORK} commit${commits === 1 ? "" : "s"} (application changes only —` +
+      " the bootcamp tooling stays stripped).",
     "",
-    "## Included pull requests",
+    "### What's changed",
     "",
-    pullList,
+    ...groups.flatMap((group) => section(`**${group.title}**`, group.entries)),
+    "### Notes",
     "",
-    "## Commits",
+    `- Diff vs \`${UPSTREAM}:${TARGET}\` is ${shortstat || "empty"} (application changes only; no bootcamp files re-added).`,
+    "- Merge with a **merge commit**, then promote to `staging` and `main`.",
+    `- Head: \`${UPSTREAM}:${state.branch}\` at \`${state.rcSha}\`.`,
     "",
-    commitList,
-    "",
-    "## Release hygiene",
-    "",
-    `- Reset to upstream: ${cfg.replaceWithUpstream.join(", ")}`,
-    `- Removed: ${cfg.remove.join(", ") || "none"}`,
-    "- Build, lint, typecheck, and format checks ran on this head before publishing.",
-    "",
-    "This pull request is updated automatically on every merge to the work branch. Merge with a merge commit; do not squash.",
+    "This pull request is updated automatically on every merge to the work branch.",
     "",
   ].join("\n");
 }
 
 // `gh pr list --head` does not accept the "<owner>:<branch>" form, so ask for
-// the bare branch and keep only the fork's own PRs. Both PR lookups go through
-// here so the filter cannot drift.
+// the bare branch and keep only the release PRs. The branch is pushed to the
+// upstream repo, so the head owner there is the upstream owner.
 function listReleasePrs(state, fields, options = {}) {
   const result = ghResult(
     [
@@ -665,7 +689,8 @@ function listReleasePrs(state, fields, options = {}) {
   return list.filter(
     (pr) =>
       pr.headRepositoryOwner &&
-      pr.headRepositoryOwner.login.toLowerCase() === FORK_OWNER.toLowerCase()
+      pr.headRepositoryOwner.login.toLowerCase() ===
+        UPSTREAM_OWNER.toLowerCase()
   );
 }
 
@@ -685,12 +710,21 @@ function closeOpenPr(message) {
   ghResult(["pr", "close", String(pr.number), "--repo", UPSTREAM], {
     allowFail: true,
   });
+  ghResult(
+    [
+      "api",
+      "--method",
+      "DELETE",
+      `repos/${UPSTREAM}/git/refs/heads/${RELEASE}`,
+    ],
+    { allowFail: true }
+  );
   log(`Closed release PR #${pr.number}.`);
 }
 
-function remoteBranchSha(branch) {
+function remoteBranchSha(branch, remote = "upstream") {
   const result = gitResult(
-    ["ls-remote", "--heads", "origin", `refs/heads/${branch}`],
+    ["ls-remote", "--heads", remote, `refs/heads/${branch}`],
     { allowFail: true }
   );
 
@@ -699,13 +733,17 @@ function remoteBranchSha(branch) {
   return line ? line.split(/\s+/)[0] : null;
 }
 
+// The release branch is pushed straight into the upstream repo so the PR is a
+// same-repo PR: an installation token scoped to zeduchat cannot open a PR from
+// a fork in another org ("Fork collab can't be granted..."). staging and main
+// are never pushed to, only this throwaway branch.
 function pushReleaseBranch(branch, headSha) {
   gitResult(
     [
       "fetch",
       "-q",
-      "origin",
-      `+refs/heads/${branch}:refs/remotes/origin/${branch}`,
+      "upstream",
+      `+refs/heads/${branch}:refs/remotes/upstream/${branch}`,
     ],
     { allowFail: true }
   );
@@ -718,11 +756,11 @@ function pushReleaseBranch(branch, headSha) {
       "push",
       "-q",
       "--force-with-lease",
-      "origin",
+      "upstream",
       `HEAD:refs/heads/${branch}`,
     ]);
   } else {
-    git(["push", "-q", "-u", "origin", `HEAD:refs/heads/${branch}`]);
+    git(["push", "-q", "upstream", `HEAD:refs/heads/${branch}`]);
   }
 
   return true;
@@ -884,7 +922,7 @@ function publish() {
       "--repo",
       UPSTREAM,
       "--title",
-      releaseTitle(),
+      releaseTitle(state),
       "--body-file",
       bodyPath,
     ]);
@@ -895,16 +933,32 @@ function publish() {
       "--repo",
       UPSTREAM,
       "--head",
-      `${FORK_OWNER}:${state.branch}`,
+      state.branch,
       "--base",
       state.target,
       "--title",
-      releaseTitle(),
+      releaseTitle(state),
       "--body-file",
       bodyPath,
     ]);
     const match = url.match(/\/pull\/(\d+)/);
     number = match ? Number(match[1]) : null;
+
+    // Same ping the maintainers have been getting by hand on every release PR.
+    if (number && cfg.releaseMention) {
+      ghResult(
+        [
+          "pr",
+          "comment",
+          String(number),
+          "--repo",
+          UPSTREAM,
+          "--body",
+          cfg.releaseMention,
+        ],
+        { allowFail: true }
+      );
+    }
   }
 
   if (number) addReleaseLabel(number);
