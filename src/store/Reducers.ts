@@ -373,6 +373,27 @@ const reducers = (state: any, action: any) => {
           count: (state.notificationBadgeState?.count ?? 0) + 1,
         },
       };
+    case ACTIONS.DECREMENT_NOTIFICATION_BADGE:
+      return {
+        ...state,
+        notificationBadgeState: {
+          count: Math.max(
+            0,
+            (state.notificationBadgeState?.count ?? 0) -
+              (typeof payload === "number" ? payload : 1)
+          ),
+        },
+      };
+    case ACTIONS.SET_NOTIFICATION_BADGE:
+      return {
+        ...state,
+        notificationBadgeState: {
+          count: Math.max(
+            0,
+            typeof payload === "number" ? payload : (payload?.count ?? 0)
+          ),
+        },
+      };
     case ACTIONS.CLEAR_NOTIFICATION_BADGE:
       return {
         ...state,

@@ -77,6 +77,30 @@ export default function NotificationNav() {
     fetchNotifications(1);
   }, [fetchNotifications]);
 
+  useEffect(() => {
+    if (!state.notifications?.length) return;
+    const latest = state.notifications[state.notifications.length - 1];
+    if (!latest) return;
+    const id =
+      latest.id ||
+      latest.message_id ||
+      latest.messages_id ||
+      `notif-${Date.now()}`;
+    const newEntry = {
+      id,
+      title: latest.title || latest.sender_name || "New Notification",
+      message: latest.message || latest.body || "",
+      avatar_url: latest.avatar_url || latest.default_avatar_url,
+      sent_at: latest.sent_at || latest.created_at || new Date().toISOString(),
+      created_at: latest.created_at || new Date().toISOString(),
+      payload: latest.payload || latest,
+    };
+    setNotifications((prev) => {
+      if (prev.some((item) => String(item.id) === String(id))) return prev;
+      return [newEntry, ...prev];
+    });
+  }, [state.notifications]);
+
   const loadMore = () => {
     if (loading || !hasMore) return;
     const nextPage = page + 1;
@@ -135,12 +159,16 @@ export default function NotificationNav() {
               <Fragment key={item.id}>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     dispatch({
                       type: ACTIONS.NOTIFICATION_DETAIL,
                       payload: item,
-                    })
-                  }
+                    });
+                    dispatch({
+                      type: ACTIONS.DECREMENT_NOTIFICATION_BADGE,
+                      payload: 1,
+                    });
+                  }}
                   className={cn(
                     "flex w-full items-start gap-3 px-3 py-4 text-left hover:bg-[#4B4BB4]",
                     notificationDetail?.id === item.id && "bg-[#4B4BB4]"
