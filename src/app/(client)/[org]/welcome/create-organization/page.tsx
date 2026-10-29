@@ -22,7 +22,7 @@ import {
 
 import { isAutoCreatedOrg } from "~/utils/organisation";
 
-const PENDING_TEMPLATE_ORG_STORAGE = "pending_template_org";
+const PENDING_TEMPLATE_ORG_STORAGE = "pending_org";
 
 // initial states
 const initialState = {
