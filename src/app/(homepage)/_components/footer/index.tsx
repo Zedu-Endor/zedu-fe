@@ -243,7 +243,12 @@ const Footer = () => {
               </p>
               <div className="mt-5 flex flex-wrap items-start gap-8 text-white">
                 {appStoreLinks.map((store) => (
-                  <Link key={store.id} href={store.href} className="space-y-1">
+                  <Link
+                    key={store.id}
+                    href={store.href || "/download"}
+                    aria-label={`Download Zedu on ${store.label}`}
+                    className="space-y-1"
+                  >
                     <div className="flex items-center gap-2">
                       <Image
                         src={store.icon}

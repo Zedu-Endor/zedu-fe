@@ -15,10 +15,10 @@ export const FeatureSection = () => {
     <>
       <section className="relative isolate flex w-full flex-col items-center gap-5 overflow-hidden px-4 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 lg:gap-8 lg:px-12">
         <div className="flex flex-col gap-3 items-center">
-          <h1 className=" text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl md:text-4xl text-center">
+          <h2 className="text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl md:text-4xl text-center">
             Everything you need for{" "}
             <span className="text-primary-500">Modern</span> Learning
-          </h1>
+          </h2>
           <p className="max-w-[95%] text-sm text-neutral-600 sm:max-w-[90%] sm:text-base md:max-w-[85%] lg:max-w-[65%] lg:text-lg">
             From organized channels to AI-powered agents, Zedu brings
             communication, collaboration, and automation into one seamless
@@ -43,9 +43,9 @@ export const FeatureSection = () => {
         <div className="w-full max-w-6xl rounded-2xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
             <div className="flex w-full flex-col gap-3 text-left lg:w-5/12">
-              <h1 className="text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl">
+              <h2 className="text-2xl font-semibold leading-tight text-neutral-900 sm:text-3xl">
                 Fewer Tools, Smarter Learning
-              </h1>
+              </h2>
               <p className="text-sm leading-relaxed text-neutral-600 sm:text-base max-w-xl">
                 Replace scattered apps with one structured platform for
                 communication, collaboration, and AI-powered education.
@@ -100,6 +100,7 @@ export const FeatureSection = () => {
                   height={35}
                   width={225}
                   priority
+                  style={{ height: "auto" }}
                   className="h-auto w-[190px] sm:w-[225px]"
                 />
               </div>
@@ -115,6 +116,7 @@ export const FeatureSection = () => {
                 height={306}
                 width={306}
                 priority
+                style={{ height: "auto" }}
                 className="h-auto w-full"
               />
             </div>

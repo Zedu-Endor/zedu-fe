@@ -51,9 +51,9 @@ export const PricingSection = ({
             showSubtitle ? "gap-4 sm:gap-6" : "gap-3"
           }`}
         >
-          <h1 className="text-2xl font-bold leading-tight text-neutral-900 sm:text-3xl md:text-4xl text-center">
+          <h2 className="text-2xl font-bold leading-tight text-neutral-900 sm:text-3xl md:text-4xl text-center">
             Simple, Flexible Pricing for Education
-          </h1>
+          </h2>
           {showSubtitle ? (
             <p className="max-w-2xl text-sm text-neutral-600 sm:text-base">
               Flexible plans for educators, bootcamps, and institutions building

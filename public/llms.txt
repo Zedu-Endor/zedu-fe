@@ -1,0 +1,24 @@
+# Zedu
+
+> Zedu is an AI-powered education and communication platform built for bootcamps, schools, and cohort-based learning communities.
+
+Zedu brings structured class discussions, instant voice rooms (Buzz), centralized academic file management, and AI teaching assistants into a single unified workspace. It eliminates fragmented chat apps and per-seat fees with affordable, predictable pricing for educators and institutions.
+
+## Products
+
+- [Buzz](/products/buzz): Instant voice conversations and audio rooms inside learning channels with automatic AI-generated meeting summaries.
+- [Channels](/products/channels): Structured topic-, course-, and cohort-based communication channels with threaded replies and educator announcements.
+- [File Management](/products/file-management): Centralized workspace to store, organize, search, and securely share learning resources, lectures, and assignments.
+
+## Solutions
+
+- [Bootcamps](/solutions/bootcamps): Streamline fast-paced cohort onboarding, weekly project check-ins, and mentor feedback loops.
+- [Schools](/solutions/schools): Safe, structured, teacher-managed communication spaces for K-12 classes and departments.
+- [Universities](/solutions/universities): Scalable campus-wide collaboration coordinating faculty, departments, and large student cohorts.
+
+## Resources & Onboarding
+
+- [Pricing](/pricing): Transparent workspace-based pricing in Nigerian Naira (NGN) without per-seat penalty fees.
+- [Templates](/templates): Pre-configured workspace templates for coding bootcamps, design fellowships, and university courses.
+- [Resources & Guides](/resources): Practical guides, educator tutorials, and comparison breakdowns for modern learning teams.
+- [Download Apps](/download): Multi-platform availability across iOS, Android, macOS, Windows, and Web.

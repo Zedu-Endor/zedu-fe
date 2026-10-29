@@ -71,7 +71,12 @@ export default function RootLayout({
       <DataProvider>
         <div className="zedu-marketing w-full">
           <Header />
-          <div className="pt-12 min-w-screen overflow-x-hidden">{children}</div>
+          <main
+            id="main-content"
+            className="pt-12 min-w-screen overflow-x-hidden"
+          >
+            {children}
+          </main>
           <Footer />
         </div>
 
