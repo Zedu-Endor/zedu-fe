@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { ogImageUrl, siteUrl } from "~/lib/env-urls";
 import Image from "next/image";
-import { ArrowBtn } from "../../_components/ui/Button";
+import { ArrowBtn, OutlineBtn } from "../../_components/ui/Button";
 import { FeaturedCard } from "../../_components/ui/FeaturedCard";
 import { DynamicFooter } from "../../_components/footer/dynamic-footer";
 import { FAQSection } from "../../_components/home/FAQSection";
@@ -157,12 +157,13 @@ const FileManagementProductsPage = () => {
           resources directly inside Zedu. Everything stays connected to the
           conversations and classes where it belongs.
         </p>
-        <div className="flex w-full max-w-md flex-row items-center justify-center gap-2 sm:gap-3">
+        <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-2 sm:gap-3">
           <ArrowBtn
             text="Start Organizing Files"
             linkToHome
             className="justify-center"
           />
+          <OutlineBtn text="Request a demo" href="/contact-sales" />
         </div>
         <div className="w-full max-w-6xl overflow-hidden rounded-2xl">
           <div className="relative aspect-[16/10]  w-full sm:aspect-[16/9] lg:aspect-[2/1] ">
