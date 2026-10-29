@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { ogImageUrl, siteUrl } from "~/lib/env-urls";
 import Image from "next/image";
-import { ArrowBtn } from "../../_components/ui/Button";
+import { ArrowBtn, OutlineBtn } from "../../_components/ui/Button";
 import {
   FilesIcon,
   MessagesQuestionIcon,
@@ -159,6 +159,7 @@ const ChannelProductPage = () => {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <ArrowBtn text="Start using channels" linkToHome />
+              <OutlineBtn text="Request a demo" href="/contact-sales" />
             </div>
           </div>
 
