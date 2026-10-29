@@ -172,7 +172,7 @@ $result = $stmt->get_result();
   };
 
   const addPlatform = () => {
-    const availablePlatforms = [
+    const availablePlatforms: Platform[] = [
       { name: "Instagram", icon: images.instagram },
       { name: "Twitter", icon: images.twitter },
       { name: "Tiktok", icon: images.tiktok },

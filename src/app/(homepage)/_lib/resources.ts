@@ -57,9 +57,9 @@ export const resources: ResourceItem[] = [
     id: 4,
     tab: "guides",
     category: "Guides",
-    title: "Using AI assistant for Learning",
+    title: "Using AI Assistants for Learning",
     description:
-      "Discover how AI help summarize discussions, answer questions, and support students Zedu workspace.",
+      "Discover how AI can summarize discussions, answer questions, and support students in the Zedu workspace.",
     image: "/images/homepage/resources/image-4.png",
     link: "#",
   },
