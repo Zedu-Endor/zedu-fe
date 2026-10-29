@@ -84,7 +84,7 @@ export const ChannelCard = (props: ComponentProps) => {
           <LockClosedIcon
             className={cn(
               "size-4",
-              props.active || isSelected ? "text-white" : restingColor
+              isActive || isSelected ? "text-white" : restingColor
             )}
           />
         ) : (

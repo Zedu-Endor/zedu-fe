@@ -144,7 +144,9 @@ const ChannelHeader = () => {
   };
 
   // Members button: the channel's total, e.g. "1,909", or "12.4K" from 10,000
-  const memberCount = Number(channelDetails?.user_count) || 0;
+  const memberCount = detailsMatch
+    ? Number(channelDetails?.user_count) || 0
+    : 0;
   const memberTotal = memberCount.toLocaleString("en");
   const memberLabel = memberCount === 1 ? "1 member" : `${memberTotal} members`;
   const memberBadge =
