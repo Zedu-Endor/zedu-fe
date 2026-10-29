@@ -339,6 +339,7 @@ const NewChatHeader = ({ onUsersSelected }: any) => {
             className="p-0"
             align="start"
             sideOffset={5}
+            onOpenAutoFocus={(event) => event.preventDefault()}
             style={{ width: triggerRef.current?.offsetWidth || "auto" }}
             onKeyDown={handleKeyDown}
             onInteractOutside={(e) => {
