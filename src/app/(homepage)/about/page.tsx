@@ -157,9 +157,9 @@ const AboutPage = () => {
         </div>
       </section>
       <section className="relative isolate flex w-full flex-col items-center gap-4 overflow-hidden px-4 pt-10 text-center sm:gap-6 sm:px-8 sm:pt-16  lg:gap-8 lg:px-12">
-        <h1 className="text-2xl font-semibold leading-tight text-neutral-900 sm:text-4xl md:text-5xl text-center">
+        <h2 className="text-2xl font-semibold leading-tight text-neutral-900 sm:text-4xl md:text-5xl text-center">
           Our Philosophy
-        </h1>
+        </h2>
 
         <div className="grid w-full max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {philosophyCards.map((card) => (
@@ -212,9 +212,9 @@ const AboutPage = () => {
         </div>
       </section>
       <section className="relative isolate flex w-full flex-col items-center gap-4 overflow-hidden px-4 py-10 text-center sm:gap-6 sm:px-8 sm:py-16  lg:gap-8 lg:px-12">
-        <h1 className="text-xl font-semibold leading-tight text-neutral-900 sm:text-3xl md:text-4xl text-center">
+        <h2 className="text-xl font-semibold leading-tight text-neutral-900 sm:text-3xl md:text-4xl text-center">
           Designed for Modern Learning Teams{" "}
-        </h1>
+        </h2>
 
         <div className="grid w-full max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {learningTeamCards.map((card) => (
@@ -284,9 +284,9 @@ const AboutPage = () => {
         </div>
 
         <div className="relative z-10 flex w-full max-w-4xl flex-col items-center justify-center gap-3 text-center text-white sm:gap-4">
-          <h1 className="text-xl font-semibold leading-tight sm:text-2xl md:text-3xl">
+          <h2 className="text-xl font-semibold leading-tight sm:text-2xl md:text-3xl">
             Our Vision
-          </h1>
+          </h2>
           <p className="max-w-[95%] text-sm leading-relaxed text-neutral-100 sm:max-w-[90%] sm:text-base md:max-w-[75%] lg:max-w-[60%] lg:text-lg">
             We believe the future of education is structured, AI-assisted, and
             built for engagement. Zedu exists to make organized learning the
