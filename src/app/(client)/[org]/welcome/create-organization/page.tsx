@@ -13,6 +13,7 @@ import useFirstChannel from "../../home/channels/hooks/first-channel";
 import StepIndicator from "~/components/ui/step-indicator";
 import { RegisterWebhookRequest } from "~/utils/webhook-request";
 import { provisionTemplateChannels } from "~/data/templates";
+// Direct sonner toast import because our toast wrapper does not support action buttons (e.g. "Skip template")
 import { toast } from "sonner";
 import { showError } from "~/components/toast/sonner";
 import {
@@ -48,7 +49,17 @@ const CreateOrganization: React.FC = () => {
     if (typeof window === "undefined") return null;
     try {
       const saved = sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE);
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      const rawUser = localStorage.getItem("user");
+      const currentUserId = rawUser
+        ? JSON.parse(rawUser)?.user_id || JSON.parse(rawUser)?.data?.user_id
+        : null;
+      if (parsed?.userId && currentUserId && parsed.userId !== currentUserId) {
+        sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
+        return null;
+      }
+      return parsed?.org || parsed;
     } catch {
       return null;
     }
@@ -57,7 +68,22 @@ const CreateOrganization: React.FC = () => {
     useState<boolean>(() => {
       if (typeof window === "undefined") return false;
       try {
-        return Boolean(sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE));
+        const saved = sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE);
+        if (!saved) return false;
+        const parsed = JSON.parse(saved);
+        const rawUser = localStorage.getItem("user");
+        const currentUserId = rawUser
+          ? JSON.parse(rawUser)?.user_id || JSON.parse(rawUser)?.data?.user_id
+          : null;
+        if (
+          parsed?.userId &&
+          currentUserId &&
+          parsed.userId !== currentUserId
+        ) {
+          sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
+          return false;
+        }
+        return true;
       } catch {
         return false;
       }
@@ -70,18 +96,38 @@ const CreateOrganization: React.FC = () => {
     (async () => {
       const token = localStorage.getItem("token") || "";
       const urlParams = new URLSearchParams(window.location.search);
-      const activeTemplate =
-        urlParams.get("template") || localStorage.getItem("selected_template");
-      const hasPendingOrg = Boolean(
-        sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE)
-      );
+      const urlTemplate = urlParams.get("template");
+
+      let hasPendingOrg = false;
+      try {
+        const saved = sessionStorage.getItem(PENDING_TEMPLATE_ORG_STORAGE);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const rawUser = localStorage.getItem("user");
+          const currentUserId = rawUser
+            ? JSON.parse(rawUser)?.user_id || JSON.parse(rawUser)?.data?.user_id
+            : null;
+          if (
+            parsed?.userId &&
+            currentUserId &&
+            parsed.userId !== currentUserId
+          ) {
+            sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
+            hasPendingOrg = false;
+          } else {
+            hasPendingOrg = true;
+          }
+        }
+      } catch {
+        hasPendingOrg = false;
+      }
 
       const userstatus = await GetRequest("/auth/onboard-status", token);
 
       if (
         userstatus?.data?.data?.status &&
         !isAutoCreatedOrg() &&
-        !activeTemplate &&
+        !urlTemplate &&
         !hasPendingOrg
       ) {
         router.push(`/${org}`);
@@ -204,6 +250,11 @@ const CreateOrganization: React.FC = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("selected_template");
       try {
+        sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
+      } catch {
+        // ignore storage cleanup failure
+      }
+      try {
         const url = new URL(window.location.href);
         url.searchParams.delete("template");
         window.history.replaceState({}, "", url.pathname + url.search);
@@ -266,6 +317,7 @@ const CreateOrganization: React.FC = () => {
 
       try {
         localStorage.removeItem("selected_template");
+        sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
       } catch {
         // ignore storage cleanup failure
       }
@@ -290,9 +342,13 @@ const CreateOrganization: React.FC = () => {
       const newOrg = res?.data?.data;
       if (newOrg?.id) {
         try {
+          const rawUser = localStorage.getItem("user");
+          const currentUserId = rawUser
+            ? JSON.parse(rawUser)?.user_id || JSON.parse(rawUser)?.data?.user_id
+            : null;
           sessionStorage.setItem(
             PENDING_TEMPLATE_ORG_STORAGE,
-            JSON.stringify(newOrg)
+            JSON.stringify({ org: newOrg, userId: currentUserId })
           );
         } catch {
           // ignore storage write failure
@@ -327,6 +383,7 @@ const CreateOrganization: React.FC = () => {
 
       try {
         localStorage.removeItem("selected_template");
+        sessionStorage.removeItem(PENDING_TEMPLATE_ORG_STORAGE);
       } catch {
         // ignore storage cleanup failure
       }

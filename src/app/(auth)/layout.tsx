@@ -13,7 +13,7 @@ import { isAutoCreatedOrg } from "~/utils/organisation";
  * @param template Optional template slug passed in query parameters.
  * @returns Destination URL string or null if organization slug is unresolved.
  */
-function getLoggedInRedirectPath(
+export function getLoggedInRedirectPath(
   orgSlugFromState?: string,
   template?: string | null
 ) {
@@ -49,11 +49,7 @@ function getLoggedInRedirectPath(
 
   if (!orgSlug) return null;
 
-  const activeTemplate =
-    template ||
-    (typeof window !== "undefined"
-      ? localStorage.getItem("selected_template")
-      : null);
+  const activeTemplate = template;
 
   const query = activeTemplate
     ? `?template=${encodeURIComponent(activeTemplate)}`
@@ -102,7 +98,7 @@ export default function RootLayout({
       if (urlTemplate) {
         localStorage.setItem("selected_template", urlTemplate);
       }
-      const t = urlTemplate || localStorage.getItem("selected_template");
+      const t = urlTemplate;
       const token = localStorage.getItem("token");
       if (token) {
         const r = getLoggedInRedirectPath(orgSlug, t);
