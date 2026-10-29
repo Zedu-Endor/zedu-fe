@@ -108,6 +108,15 @@ export function useMessageDeepLink({
               });
             }
           }
+        } else if (
+          existingReplies.length === 0 &&
+          Boolean(parentThread?.replies_count && parentThread.replies_count > 0)
+        ) {
+          // Trigger initial reply fetch when replacing placeholder without preview replies
+          dispatch({
+            type: ACTIONS.LOAD_THREAD,
+            payload: !loadThreadRef.current,
+          });
         }
       }
       return;
