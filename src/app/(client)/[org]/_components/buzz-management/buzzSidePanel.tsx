@@ -40,7 +40,7 @@ const BuzzSidePanel: React.FC<buzzSidePanelProps> = ({
   onChatToggle,
 }) => {
   const { state, dispatch } = useContext(DataContext);
-  const { user, buzzParticipants, buzzView, channelDetails } = state;
+  const { user, buzzParticipants, buzzView, channelDetails, buzzData } = state;
 
   const [showQuickEmojis, setShowQuickEmojis] = useState(false);
 
@@ -99,14 +99,42 @@ const BuzzSidePanel: React.FC<buzzSidePanelProps> = ({
 
   const handleTimeoutLeave = useCallback(async () => {
     await handleLeave();
-    await handleEndBuzz();
+    const isHost = Boolean(
+      buzzData?.host_id &&
+      (buzzData.host_id === user?.user_id || buzzData.host_id === user?.id)
+    );
+    if (isHost) {
+      await handleEndBuzz();
+    }
     resetBuzzUiState();
-  }, [handleLeave, handleEndBuzz, resetBuzzUiState]);
+  }, [
+    buzzData?.host_id,
+    user?.user_id,
+    user?.id,
+    handleLeave,
+    handleEndBuzz,
+    resetBuzzUiState,
+  ]);
 
   const handleTimeoutEnd = useCallback(async () => {
-    await handleEndBuzz();
+    const isHost = Boolean(
+      buzzData?.host_id &&
+      (buzzData.host_id === user?.user_id || buzzData.host_id === user?.id)
+    );
+    if (isHost) {
+      await handleEndBuzz();
+    } else {
+      await handleLeave();
+    }
     resetBuzzUiState();
-  }, [handleEndBuzz, resetBuzzUiState]);
+  }, [
+    buzzData?.host_id,
+    user?.user_id,
+    user?.id,
+    handleEndBuzz,
+    handleLeave,
+    resetBuzzUiState,
+  ]);
 
   if (joining)
     return (
