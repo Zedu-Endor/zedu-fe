@@ -105,7 +105,7 @@ const InviteForm = () => {
 
       setOrgData(data);
 
-      if (!isLoggedIn && isNewUser) {
+      if (!isLoggedIn && (isNewUser || !userEmail)) {
         setPendingRedirect({
           path: buildAuthRedirectUrl("/auth/sign-up", userEmail),
           message: `Please create an account to continue to join ${formattedOrgName} organisation.`,
