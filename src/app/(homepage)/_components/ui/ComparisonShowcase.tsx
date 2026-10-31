@@ -14,6 +14,7 @@ type ComparisonShowcaseProps = {
   withoutPanelClassName?: string;
   withPanelClassName?: string;
   ctaContainerClassName?: string;
+  withoutIcon?: "x" | "check";
 };
 
 export const ComparisonShowcase = ({
@@ -28,7 +29,10 @@ export const ComparisonShowcase = ({
   withoutPanelClassName,
   withPanelClassName,
   ctaContainerClassName,
+  withoutIcon = "x",
 }: ComparisonShowcaseProps) => {
+  const WithoutIcon = withoutIcon === "check" ? Check : X;
+
   return (
     <div className={cn("mx-auto w-full max-w-7xl", className)}>
       <div
@@ -47,7 +51,7 @@ export const ComparisonShowcase = ({
           <ul className="ml-2 space-y-3">
             {withoutItems.map((item, idx) => (
               <li key={idx} className="flex items-start gap-3">
-                <X size={18} className="mt-0.5 flex-shrink-0" />
+                <WithoutIcon size={18} className="mt-0.5 flex-shrink-0" />
                 <span className="text-sm leading-relaxed">{item}</span>
               </li>
             ))}

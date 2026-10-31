@@ -63,6 +63,8 @@ const resourcesLinks: FooterLink[] = [
   { id: 1, label: "Templates", href: "/templates" },
   { id: 2, label: "Privacy Policy", href: "/policy" },
   { id: 3, label: "Terms of Service", href: "/terms-of-service" },
+  { id: 4, label: "Zedu vs Discord", href: "/compare/zedu-vs-discord" },
+  { id: 5, label: "Zedu vs Slack", href: "/compare/zedu-vs-slack" },
 ];
 
 const footerSections = [
