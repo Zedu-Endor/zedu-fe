@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteUrl } from "~/lib/env-urls";
 import { Crown, Github, Users } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import {
@@ -15,6 +16,9 @@ import { TEAM } from "./team";
 export const metadata: Metadata = {
   title: `${TEAM.name} Contributors`,
   description: `Meet the ${TEAM.name} team contributing to Zedu.`,
+  alternates: {
+    canonical: siteUrl("/contributors/sparrow"),
+  },
 };
 
 const getInitials = (name: string) =>
