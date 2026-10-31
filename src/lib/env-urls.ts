@@ -56,6 +56,15 @@ function appStoreProviderToken(): string {
   );
 }
 
+/** Bare store URLs, untagged — for metadata and ID extraction, not marketing links. */
+export function appStoreUrl(): string {
+  return storeBaseUrl("app");
+}
+
+export function playStoreUrl(): string {
+  return storeBaseUrl("play");
+}
+
 /**
  * App Store or Google Play link tagged with where it was clicked, so the
  * store reports can credit installs to the page and placement.
