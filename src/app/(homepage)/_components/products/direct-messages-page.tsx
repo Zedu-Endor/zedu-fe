@@ -143,7 +143,7 @@ const DirectMessagesProductPage = () => {
           aria-hidden="true"
           className="pointer-events-none absolute bottom-0 left-1/2 -z-10 h-[30%] w-screen -translate-x-1/2 bg-gradient-to-t from-blue-50/30 to-white"
         />
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 rounded-[28px] px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-14 lg:px-12 lg:py-14 min-h-[420px]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 rounded-[28px] px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-14 lg:px-12 lg:py-14 min-h-[85dvh]">
           <div className="flex flex-col items-center gap-5 text-center lg:max-w-[470px] lg:items-start lg:text-left">
             <h1 className="text-3xl font-semibold leading-tight text-[#1f2530] sm:text-4xl lg:text-[44px] lg:leading-[1.12]">
               <span className="text-primary-500">Personal Conversations</span>{" "}
@@ -236,12 +236,11 @@ const DirectMessagesProductPage = () => {
             <Link
               key={feature.title}
               href={feature.href}
-              className="flex h-full flex-col justify-center gap-3 rounded-2xl bg-white p-4 transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+              className="flex h-full flex-col justify-center gap-3 rounded-2xl bg-white p-4 transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 sm:gap-4 sm:rounded-3xl sm:p-6"
             >
               <Image
                 src={feature.icon}
                 alt=""
-                aria-hidden="true"
                 height={40}
                 width={40}
                 className="h-8 w-8 sm:h-10 sm:w-10"
