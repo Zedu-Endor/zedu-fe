@@ -35,7 +35,6 @@ const PeopleMessage = ({ participant }: any) => {
   const groupedMessages = groupMessagesByDate(chats);
   const params = useParams();
   const id = params.id as string;
-  const isPersonalDm = participant?.user_id === user?.user_id;
   const [showBadge, setShowBadge] = useState(false);
   const [popupId, setPopupId] = useState<any>(null);
 
@@ -310,19 +309,12 @@ const PeopleMessage = ({ participant }: any) => {
               </div>
               <h3 className="text-lg font-bold text-[#1D2939]">
                 {participant?.username}
-                {isPersonalDm ? " (you)" : ""}
               </h3>
             </div>
             <p className="text-[17px] text-[#344054] mb-2">
-              {isPersonalDm ? (
-                "Your personal space. Save messages, notes, links, and anything you want to come back to later."
-              ) : (
-                <>
-                  This conversation is just between you and{" "}
-                  <UsernameHover item={participant} />. Check out their profile
-                  to learn about them.
-                </>
-              )}
+              This conversation is just between you and
+              <UsernameHover item={participant} />. Check out their profile to
+              learn about them.
             </p>
             <Button
               variant={"outline"}
