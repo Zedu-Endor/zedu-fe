@@ -4,9 +4,17 @@ import * as Popover from "@radix-ui/react-popover";
 import { Sparkles } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import type { Contributor } from "../_lib/contributors";
 
-const OSPREY_AVATAR = "/TelexIcon.svg";
+function getInitials(name: string): string {
+  const words = name.replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/);
+  const initials = words
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]);
+  return initials.join("").toUpperCase();
+}
 
 export const ContributorCard = ({ name, username }: Contributor) => {
   const [open, setOpen] = useState(false);
@@ -42,13 +50,11 @@ export const ContributorCard = ({ name, username }: Contributor) => {
           className="group flex h-full w-full flex-col items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-6 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         >
           <span className="flex size-24 items-end justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-50 via-white to-amber-50 ring-4 ring-white shadow-sm transition-transform group-hover:scale-105">
-            <Image
-              src={OSPREY_AVATAR}
-              alt=""
-              width={96}
-              height={96}
-              className="h-[92%] w-[92%] object-contain object-bottom"
-            />
+            <Avatar className="size-24">
+              <AvatarFallback className="bg-primary-50 text-primary-500">
+                {getInitials(name)}
+              </AvatarFallback>
+            </Avatar>
           </span>
           <span className="flex w-full min-w-0 flex-col gap-1">
             <span className="truncate text-base font-semibold text-neutral-900 sm:text-lg">
@@ -79,13 +85,11 @@ export const ContributorCard = ({ name, username }: Contributor) => {
         >
           <div className="flex items-center gap-4">
             <div className="flex size-16 shrink-0 items-end justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-50 via-white to-amber-50 ring-1 ring-neutral-200">
-              <Image
-                src={OSPREY_AVATAR}
-                alt=""
-                width={64}
-                height={64}
-                className="h-[92%] w-[92%] object-contain object-bottom"
-              />
+              <Avatar className="size-16">
+                <AvatarFallback className="bg-primary-50 text-primary-500">
+                  {getInitials(name)}
+                </AvatarFallback>
+              </Avatar>
             </div>
             <div className="min-w-0">
               <h3
