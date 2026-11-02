@@ -4,13 +4,16 @@ import Image from "next/image";
 import { ArrowBtn } from "../../_components/ui/Button";
 import { FeaturedCard } from "../../_components/ui/FeaturedCard";
 import { DynamicFooter } from "../../_components/footer/dynamic-footer";
+import { getProductBreadcrumbJsonLd } from "../../_lib/productStructuredData";
 import { FAQSection } from "../../_components/home/FAQSection";
 import type { HomeFAQ } from "../../_lib/faqData";
 
+const description =
+  "Manage course files in one structured workspace with Zedu File Management. Organize resources, share securely, and collaborate across classes, cohorts, and departments.";
+
 export const metadata: Metadata = {
   title: "File Management for Classes and Cohorts",
-  description:
-    "Manage course files in one structured workspace with Zedu File Management. Organize resources, share securely, and collaborate across classes, cohorts, and departments.",
+  description,
   keywords: [
     "Zedu file management",
     "education file sharing",
@@ -23,8 +26,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Zedu File Management - Organize and Share Learning Materials",
-    description:
-      "Store lectures, assignments, and class resources in organized spaces while keeping collaboration connected to the right learning context.",
+    description,
     url: siteUrl("/products/file-management"),
     siteName: "Zedu",
     type: "website",
@@ -32,8 +34,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Zedu File Management - Structured Learning Resources",
-    description:
-      "Keep course files organized, searchable, and secure with a collaboration-ready workspace built for education.",
+    description,
   },
   alternates: {
     canonical: siteUrl("/products/file-management"),
@@ -134,6 +135,15 @@ const fileManagementFAQs: HomeFAQ[] = [
 const FileManagementProductsPage = () => {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: getProductBreadcrumbJsonLd(
+            "File Management",
+            "/products/file-management"
+          ),
+        }}
+      />
       <section className="relative isolate flex w-full flex-col items-center gap-4 overflow-hidden px-4 py-10 text-center sm:gap-6 sm:px-8 sm:py-16  lg:gap-8 lg:px-12 mt-10">
         <div
           aria-hidden="true"

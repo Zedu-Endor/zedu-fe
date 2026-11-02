@@ -27,13 +27,16 @@ type FooterLink = {
 const productLinks: FooterLink[] = [
   { id: 0, label: "Buzz", href: "/products/buzz" },
   { id: 1, label: "Channels", href: "/products/channels" },
-  { id: 2, label: "File Management", href: "/products/file-management" },
-  { id: 3, label: "AI Assistant", href: "/products/ai" },
+  { id: 2, label: "Direct Messages", href: "/products/direct-messages" },
+  { id: 3, label: "File Management", href: "/products/file-management" },
+  { id: 4, label: "AI Assistant", href: "/products/ai" },
 ];
 const solutionLinks: FooterLink[] = [
   { id: 0, label: "Bootcamps", href: "/solutions/bootcamps" },
   { id: 1, label: "Schools", href: "/solutions/schools" },
   { id: 2, label: "Universities", href: "/solutions/universities" },
+  { id: 3, label: "Study Groups", href: "/solutions/study-groups" },
+  { id: 4, label: "Tutors", href: "/solutions/tutors" },
 ];
 
 const supportLinks: FooterLink[] = [
@@ -62,6 +65,16 @@ const supportLinks: FooterLink[] = [
     label: "Ambassadors",
     href: "/ambassadors",
   },
+  {
+    id: 5,
+    label: "Refer a program",
+    href: "/refer",
+  },
+  {
+    id: 6,
+    label: "What's new",
+    href: "/changelog",
+  },
 ];
 
 const resourcesLinks: FooterLink[] = [
@@ -69,19 +82,24 @@ const resourcesLinks: FooterLink[] = [
   { id: 1, label: "Templates", href: "/templates" },
   {
     id: 2,
+    label: "Free Health Check",
+    href: "/tools/cohort-communication-health-check",
+  },
+  {
+    id: 3,
     label: "Google Classroom Alternative",
     href: "/alternatives/google-classroom",
   },
-  { id: 3, label: "Compare Zedu", href: "/compare" },
-  { id: 4, label: "Zedu vs Discord", href: "/compare/zedu-vs-discord" },
-  { id: 5, label: "Zedu vs Slack", href: "/compare/zedu-vs-slack" },
+  { id: 4, label: "Compare Zedu", href: "/compare" },
+  { id: 5, label: "Zedu vs Discord", href: "/compare/zedu-vs-discord" },
+  { id: 6, label: "Zedu vs Slack", href: "/compare/zedu-vs-slack" },
   {
-    id: 6,
+    id: 7,
     label: "Zedu vs WhatsApp & Telegram",
     href: "/resources?guide=zedu-vs-whatsapp-telegram-for-bootcamps",
   },
-  { id: 7, label: "Privacy Policy", href: "/policy" },
-  { id: 8, label: "Terms of Service", href: "/terms-of-service" },
+  { id: 8, label: "Privacy Policy", href: "/policy" },
+  { id: 9, label: "Terms of Service", href: "/terms-of-service" },
 ];
 
 const footerSections = [
@@ -123,12 +141,14 @@ const appStoreLinks = [
     id: 0,
     store: "app" as const,
     icon: "/images/app-download/app-store-badge-2.png",
+    label: "App Store",
     starKey: "app",
   },
   {
     id: 1,
     store: "play" as const,
     icon: "/images/app-download/google-play-badge-2.png",
+    label: "Google Play",
     starKey: "play",
   },
 ];

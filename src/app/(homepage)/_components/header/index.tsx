@@ -17,7 +17,7 @@ import {
   AccordionTrigger,
 } from "~/components/ui/accordion";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { DataContext } from "~/store/GlobalState";
 import { WidgetIcon } from "../svgs";
 import { ArrowBtn, OutlineBtn } from "../ui/Button";
@@ -44,6 +44,7 @@ const dropdownSections: DropdownSection[] = [
     items: [
       { label: "Buzz", href: "/products/buzz" },
       { label: "Channels", href: "/products/channels" },
+      { label: "Direct Messages", href: "/products/direct-messages" },
       { label: "File Management", href: "/products/file-management" },
       { label: "AI Assistant", href: "/products/ai" },
     ],
@@ -56,6 +57,8 @@ const dropdownSections: DropdownSection[] = [
       { label: "Bootcamps", href: "/solutions/bootcamps" },
       { label: "Schools", href: "/solutions/schools" },
       { label: "Universities", href: "/solutions/universities" },
+      { label: "Study Groups", href: "/solutions/study-groups" },
+      { label: "Tutors", href: "/solutions/tutors" },
     ],
   },
 ];
@@ -76,6 +79,7 @@ const Header: React.FC = () => {
   const [token, setToken] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
   const { state } = useContext(DataContext);
   const { celebration } = useCelebration();
 
@@ -97,6 +101,15 @@ const Header: React.FC = () => {
     setToken(userToken);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const search = window.location.search;
+      if (search.includes("assessment=true") || search.includes("demo=true")) {
+        router.push("/demo?assessment=true");
+      }
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!openDropdown) return;

@@ -10,12 +10,15 @@ import {
 import { MessagesIcon } from "../../_components/svgs";
 import { FAQSection } from "../../_components/home/FAQSection";
 import { DynamicFooter } from "../../_components/footer/dynamic-footer";
+import { getProductBreadcrumbJsonLd } from "../../_lib/productStructuredData";
 import type { HomeFAQ } from "../../_lib/faqData";
+
+const description =
+  "Explore Zedu Channels for structured classroom and cohort communication. Organize discussions by subject, share updates clearly, and scale collaboration across learning teams.";
 
 export const metadata: Metadata = {
   title: "Channels - Organized Communication for Learning Teams",
-  description:
-    "Explore Zedu Channels for structured classroom and cohort communication. Organize discussions by subject, share updates clearly, and scale collaboration across learning teams.",
+  description,
   keywords: [
     "Zedu channels",
     "education communication channels",
@@ -28,8 +31,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Zedu Channels - Organized Communication for Learning Teams",
-    description:
-      "Keep learning conversations structured with channels built for schools, universities, and cohort-based programs.",
+    description,
     url: siteUrl("/products/channels"),
     siteName: "Zedu",
     type: "website",
@@ -37,8 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Zedu Channels - Structured Class Communication",
-    description:
-      "Create focused discussions, announcements, and threaded conversations with channels designed for modern education teams.",
+    description,
   },
   alternates: {
     canonical: siteUrl("/products/channels"),
@@ -130,6 +131,12 @@ const channelsFAQs: HomeFAQ[] = [
 const ChannelProductPage = () => {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: getProductBreadcrumbJsonLd("Channels", "/products/channels"),
+        }}
+      />
       <section className="relative isolate overflow-hidden px-4 py-10 sm:px-6 sm:py-14 lg:px-10 lg:py-16">
         <div
           aria-hidden="true"
@@ -138,7 +145,7 @@ const ChannelProductPage = () => {
         <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 rounded-[28px] px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-14 lg:px-12 lg:py-14 min-h-[85dvh]">
           <div className="flex flex-col items-center gap-5 text-center lg:max-w-[470px] lg:items-start lg:text-left">
             <h1 className="text-3xl font-semibold leading-tight text-[#1f2530] sm:text-4xl lg:text-[44px] lg:leading-[1.12]">
-              <span className="text-primary-500">Organise Learning</span> with
+              <span className="text-primary-500">Organize Learning</span> with
               Structured Channels.
             </h1>
             <p className="max-w-[46ch] text-sm leading-relaxed text-[#5a6170] sm:text-base">

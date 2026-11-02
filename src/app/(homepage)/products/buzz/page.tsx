@@ -6,11 +6,14 @@ import { BuzzPageHeroSVG } from "../../_components/svgs";
 import { FAQSection } from "../../_components/home/FAQSection";
 import type { HomeFAQ } from "../../_lib/faqData";
 import { DynamicFooter } from "../../_components/footer/dynamic-footer";
+import { getProductBreadcrumbJsonLd } from "../../_lib/productStructuredData";
+
+const description =
+  "Use Zedu Buzz to start instant voice conversations inside learning channels. Collaborate in real time, clarify lessons faster, and review AI-generated session summaries.";
 
 export const metadata: Metadata = {
   title: "Buzz - Instant Voice Conversations for Learning Teams",
-  description:
-    "Use Zedu Buzz to start instant voice conversations inside learning channels. Collaborate in real time, clarify lessons faster, and review AI-generated session summaries.",
+  description,
   keywords: [
     "Zedu Buzz",
     "education voice chat",
@@ -24,8 +27,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Zedu Buzz - Instant Voice Conversations for Learning Teams",
-    description:
-      "Launch live voice discussions directly in channels and keep every session useful with AI-powered recap summaries.",
+    description,
     url: siteUrl("/products/buzz"),
     siteName: "Zedu",
     type: "website",
@@ -33,8 +35,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Zedu Buzz - Real-Time Voice Collaboration",
-    description:
-      "Start instant voice sessions in your learning channels and keep everyone aligned with AI-generated summaries.",
+    description,
   },
   alternates: {
     canonical: siteUrl("/products/buzz"),
@@ -98,6 +99,12 @@ const buzzFAQs: HomeFAQ[] = [
 const BuzzProductsPage = () => {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: getProductBreadcrumbJsonLd("Buzz", "/products/buzz"),
+        }}
+      />
       <section className="relative isolate overflow-hidden px-4 py-10 sm:px-6 sm:py-14 lg:px-10 lg:py-16">
         <div
           aria-hidden="true"
@@ -177,7 +184,10 @@ const BuzzProductsPage = () => {
       <FAQSection
         faqs={buzzFAQs}
         answerFragments={{
+          "buzz-item-1": "when-to-use-buzz",
+          "buzz-item-2": "what-can-i-do-in-a-buzz-session",
           "buzz-item-3": "how-to-start-a-buzz",
+          "buzz-item-4": "are-buzz-sessions-summarized-automatically",
         }}
       />
       <DynamicFooter

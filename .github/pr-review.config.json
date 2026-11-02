@@ -10,6 +10,7 @@
       "src/components/rbac/",
       "src/app/(client)/[org]/_components/",
       "src/app/(homepage)/_components/",
+      "src/app/(homepage)/solutions/",
       "src/app/(client)/[org]/settings/",
       "src/app/(auth)/",
       "src/app/(accept_general_invitation)/",
@@ -23,8 +24,13 @@
       "src/app/(client)/[org]/layout.tsx",
       "src/app/(client)/[org]/client-layout.tsx",
       "src/app/(homepage)/layout.tsx",
+      "src/app/(homepage)/refer/page.tsx",
+      "src/app/(homepage)/refer/refer-program-form.tsx",
       "src/app/(client)/[org]/home/channels/[id]/settings/page.tsx",
-      "src/app/(client)/[org]/home/channels/[id]/settings/history/page.tsx"
+      "src/app/(client)/[org]/home/channels/[id]/settings/history/page.tsx",
+      "src/app/(homepage)/solutions/study-groups/page.tsx",
+      "src/app/(homepage)/solutions/study-groups/opengraph-image.tsx",
+      "src/app/(homepage)/solutions/study-groups/twitter-image.tsx"
     ]
   },
   "reuse": {
@@ -56,7 +62,10 @@
     "deprecatedAlias": "@/"
   },
   "hardcodedUrls": {
-    "allowPatterns": ["^https?://(www\\.)?w3\\.org(/|$)"],
+    "allowPatterns": [
+      "^https?://(www\\.)?w3\\.org(/|$)",
+      "^https?://schema\\.org(/|$)"
+    ],
     "excludePathPrefixes": ["cypress/", ".github/"],
     "scanExtensions": [".ts", ".tsx", ".js", ".jsx", ".mjs"]
   },
