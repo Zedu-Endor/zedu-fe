@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 
-import { ArrowBtn, DownloadAppBtn } from "../_components/ui/Button";
+import { ArrowBtn } from "../_components/ui/Button";
 import FeatureCard from "../_components/FeatureCard";
 import { DynamicFooter } from "../_components/footer/dynamic-footer";
 import { QRCodeDisplay } from "../_components/QRCodeDisplay";
@@ -10,6 +11,40 @@ import { getDownloadStructuredData } from "../_lib/downloadStructuredData";
 
 const HERO_LINK = { campaign: "download-page", content: "hero" };
 const BOTTOM_LINK = { campaign: "download-page", content: "bottom" };
+
+const STORE_BADGES = {
+  app: {
+    src: "/images/app-download/app-store-badge.png",
+    alt: "Download on the App Store",
+  },
+  play: {
+    src: "/images/app-download/google-play-badge.png",
+    alt: "Get it on Google Play",
+  },
+};
+
+const StoreBadgeLink = ({
+  store,
+  href,
+}: {
+  store: keyof typeof STORE_BADGES;
+  href: string;
+}) => (
+  <Link
+    href={href || "#"}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-block rounded-lg transition duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary-500 focus-visible:ring-offset-2 motion-reduce:transition-none"
+  >
+    <Image
+      src={STORE_BADGES[store].src}
+      alt={STORE_BADGES[store].alt}
+      width={360}
+      height={104}
+      className="h-12 w-auto sm:h-14"
+    />
+  </Link>
+);
 
 export const metadata: Metadata = {
   title: {
@@ -107,18 +142,8 @@ const DownLoadPage = () => {
         </p>
         <div className="flex w-full max-w-xl flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
           {" "}
-          <DownloadAppBtn
-            text="Download on the"
-            description="App Store"
-            leftIcon="apple"
-            href={storeLink("app", HERO_LINK)}
-          />
-          <DownloadAppBtn
-            text="GET IT ON"
-            description="Google Play"
-            leftIcon="google"
-            href={storeLink("play", HERO_LINK)}
-          />
+          <StoreBadgeLink store="app" href={storeLink("app", HERO_LINK)} />
+          <StoreBadgeLink store="play" href={storeLink("play", HERO_LINK)} />
         </div>
 
         <div className="flex w-full max-w-md flex-col items-center justify-center gap-2 sm:gap-3">
@@ -179,21 +204,13 @@ const DownLoadPage = () => {
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
-              <DownloadAppBtn
-                text="Download on the"
-                description="App Store"
-                leftIcon="apple"
+              <StoreBadgeLink
+                store="app"
                 href={storeLink("app", BOTTOM_LINK)}
-                dark
-                iconColor="#FFFFFF"
               />
-              <DownloadAppBtn
-                text="GET IT ON"
-                description="Google Play"
-                leftIcon="google"
+              <StoreBadgeLink
+                store="play"
                 href={storeLink("play", BOTTOM_LINK)}
-                dark
-                iconColor="#FFFFFF"
               />
             </div>
 
