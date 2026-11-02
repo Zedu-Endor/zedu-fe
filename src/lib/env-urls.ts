@@ -11,7 +11,13 @@ function readEnv(name: string): string {
 // links rendered by client components must read process.env.NEXT_PUBLIC_* directly.
 
 export function siteUrl(path = ""): string {
-  const base = readEnv("NEXT_PUBLIC_CLIENT_URL");
+  const base =
+    readEnv("NEXT_PUBLIC_CLIENT_URL") ||
+    (process.env.NEXT_PUBLIC_VERCEL_URL
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      : "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "https://zedu.chat";
   if (!path || path === "/") {
     return base;
   }

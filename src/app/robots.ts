@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { siteUrl } from "~/lib/env-urls";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = siteUrl();
+  const base = siteUrl() || "https://zedu.chat";
 
   return {
     rules: {

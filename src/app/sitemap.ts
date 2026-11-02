@@ -60,7 +60,7 @@ const RESOURCE_PAGES = resources
   .map(({ link }) => ({ path: link, priority: 0.5 }));
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = siteUrl();
+  const base = siteUrl() || "https://zedu.chat";
   return [...PAGES, ...RESOURCE_PAGES]
     .filter(
       ({ path }) =>

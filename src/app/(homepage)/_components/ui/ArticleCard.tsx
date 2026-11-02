@@ -43,7 +43,7 @@ export const ArticleCard = ({
           aria-label={`Learn more: ${title}`}
           className="w-fit text-left text-sm text-blue-900 underline-offset-4 hover:underline focus-visible:underline"
         >
-          Learn more
+          Learn more <span className="sr-only">about {title}</span>
         </Link>
       </div>
     </article>
