@@ -42,6 +42,7 @@ const ClientLayout = ({
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [readySlug, setReadySlug] = useState<string | null>(null);
   const { state, dispatch } = useContext(DataContext);
   const pathname = usePathname();
   const prevPathnameRef = useRef<string | null>(null);
@@ -86,6 +87,7 @@ const ClientLayout = ({
       if (cancelled) return;
       setLoading(false);
       setIsInitialized(true);
+      setReadySlug(slug);
     };
 
     const syncOrgFromSlug = async (targetSlug: string) => {
@@ -122,6 +124,20 @@ const ClientLayout = ({
         type: ACTIONS.ORG_SLUG,
         payload: "client",
       });
+      finish();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Recorder links use their own session token and membership rules. Keep
+    // the recorder route available without treating its URL slug as proof for
+    // ordinary private workspace routes.
+    if (isRecorderRoute(pathname)) {
+      localStorage.setItem("orgSlug", slug);
+      if (state.orgSlug !== slug) {
+        dispatch({ type: ACTIONS.ORG_SLUG, payload: slug });
+      }
       finish();
       return () => {
         cancelled = true;
@@ -181,16 +197,8 @@ const ClientLayout = ({
       };
     }
 
-    if (!storedSlug) {
-      localStorage.setItem("orgSlug", slug);
-      dispatch({ type: ACTIONS.ORG_SLUG, payload: slug });
-      finish();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    // Genuine org switch: URL slug differs from the session org.
+    // Revalidate the URL slug when there is no verified session slug. The
+    // URL itself must never be persisted as proof of organisation access.
     const handleCheckSlug = async () => {
       const response = await GetRequest(`/users/switch-org/${slug}`);
       if (cancelled) return;
@@ -213,8 +221,10 @@ const ClientLayout = ({
 
         redirectAfterOrgSwitch(nextSlug, channelId);
         return;
-      } else if (status === 404 || status === 400) {
-        router.push("/404");
+      } else {
+        // AuthGuard normally rejects this route before ClientLayout mounts.
+        // Keep this second gate closed if the membership check fails here too.
+        return;
       }
 
       finish();
@@ -286,7 +296,7 @@ const ClientLayout = ({
       ? { skipMedia: true, skipRemoteMute: true, minimalMode: true }
       : undefined;
 
-  if (loading) return null;
+  if (loading || readySlug !== slug) return null;
 
   if (isStandaloneBuzzSession) {
     return (

@@ -4,9 +4,11 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { ACTIONS } from "~/store/Actions";
 import { DataContext } from "~/store/GlobalState";
 import { GetRequest } from "~/utils/new-request";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   hydrateRecorderSessionFromSearchParams,
+  isBuzzDetailsRoute,
+  isRecorderRoute,
   RECORDER_SESSION_MODE,
 } from "~/lib/buzz/session";
 import AuthSessionSetup from "~/components/auth/auth-session-setup";
@@ -20,38 +22,97 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+type AccessStatus = "checking" | "ready" | "not-found" | "error";
+
+interface AccessState {
+  slug: string;
+  token: string;
+  status: AccessStatus;
+}
+
+type ApiResult = {
+  status?: number;
+  response?: { status?: number };
+  data?: { data?: Record<string, any> };
+};
+
+const getResponseStatus = (response: ApiResult) =>
+  response?.status ?? response?.response?.status;
+
+const isSuccess = (status: number | undefined) =>
+  status === 200 || status === 201;
+
+const isMissingAccess = (status: number | undefined) =>
+  status === 400 || status === 403 || status === 404;
+
+const AccessView = ({
+  title,
+  message,
+  onRetry,
+}: {
+  title: string;
+  message: string;
+  onRetry?: () => void;
+}) => (
+  <main className="flex overflow-x-hidden" role="main">
+    <div className="flex h-screen w-full flex-col">
+      <div className="mt-24 flex max-w-full flex-col items-center justify-center">
+        <p className="mt-5 text-xl font-semibold leading-6 text-slate-600">
+          {title}
+        </p>
+        <p className="mt-3 text-sm font-normal leading-5 text-slate-600">
+          {message}
+        </p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-5 rounded-md bg-primary-500 px-8 py-2 text-white"
+          >
+            Try again
+          </button>
+        )}
+      </div>
+    </div>
+  </main>
+);
+
 const AuthGuard = ({ children }: AuthGuardProps) => {
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [access, setAccess] = useState<AccessState | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const search = searchParams.toString();
   const { state, dispatch } = useContext(DataContext);
-  const fetchedSessionRef = useRef<{
-    token: string | null;
-    orgId: string | null;
+  const currentSlug = pathname.split("/").filter(Boolean)[0] ?? "";
+  const sessionToken =
+    typeof window === "undefined"
+      ? state.token || ""
+      : localStorage.getItem("token") || "";
+  const verifiedSessionRef = useRef<{
+    token: string;
+    orgId: string;
+    slug: string;
     profileCallback: boolean;
   } | null>(null);
+  const switchRequestRef = useRef<{
+    key: string;
+    promise: Promise<ApiResult>;
+  } | null>(null);
+  const switchQueueRef = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
+    let cancelled = false;
     const initializeApp = async () => {
-      const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
-      if (isReservedPathSegment(firstSegment)) {
-        setLoading(false);
-        return;
-      }
-
-      const isRecorderRoute = pathname.includes("/buzz-record/");
-      let orgId = localStorage.getItem("orgId");
       let token = localStorage.getItem("token");
+      let orgId = localStorage.getItem("orgId");
+      const firstSegment = pathname.split("/").filter(Boolean)[0] ?? "";
+      const isRecorder = isRecorderRoute(pathname);
 
-      if (isRecorderRoute) {
+      if (isRecorder) {
         const session = hydrateRecorderSessionFromSearchParams(searchParams);
-        if (session.token) {
-          token = session.token;
-        }
-        if (session.orgId) {
-          orgId = session.orgId;
-        }
+        if (session.token) token = session.token;
+        if (session.orgId) orgId = session.orgId;
         if (session.isRecorder) {
           dispatch({
             type: ACTIONS.BUZZ_SESSION_MODE,
@@ -63,101 +124,298 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
       dispatch({ type: ACTIONS.TOKEN, payload: token });
       dispatch({ type: ACTIONS.ORG_ID, payload: orgId });
 
-      // Construct redirect URL once
-      const currentFullUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
-      const loginUrl = `/auth/login?redirect=${encodeURIComponent(currentFullUrl)}`;
+      // Invitation, auth, guest Buzz, and recorder routes have their own access flow.
+      if (
+        isReservedPathSegment(firstSegment) ||
+        isBuzzDetailsRoute(pathname) ||
+        isRecorder
+      ) {
+        setAccess({ slug: currentSlug, token: token || "", status: "ready" });
+        return;
+      }
 
-      // 1. Immediate local check
-      if (!orgId || !token) {
-        fetchedSessionRef.current = null;
-        // Only redirect if we aren't already on an auth page
-        if (!pathname.startsWith("/auth")) {
-          router.push(loginUrl);
+      // `/client` is a legacy alias for the signed-in user's current workspace,
+      // not an organisation slug. Validate its stored organisation against the
+      // authenticated user's membership list before allowing the alias through.
+      if (currentSlug === "client") {
+        if (!token || !orgId) {
+          setAccess({
+            slug: currentSlug,
+            token: token || "",
+            status: "not-found",
+          });
+          return;
         }
-        setLoading(false);
+
+        setAccess({ slug: currentSlug, token, status: "checking" });
+        const profileCallback = state?.profileCallback ?? false;
+        const previousSession = verifiedSessionRef.current;
+        if (
+          previousSession?.token === token &&
+          previousSession.orgId === orgId &&
+          previousSession.slug === currentSlug &&
+          previousSession.profileCallback === profileCallback
+        ) {
+          setAccess({ slug: currentSlug, token, status: "ready" });
+          return;
+        }
+
+        const memberships = (await GetRequest(
+          "/users/organisations"
+        )) as ApiResult;
+        if (cancelled) return;
+        const membershipStatus = getResponseStatus(memberships);
+        const organisations = memberships?.data?.data;
+        if (!isSuccess(membershipStatus)) {
+          if (isUnauthorizedResponse(memberships)) {
+            handleSessionExpired();
+            setAccess({ slug: currentSlug, token, status: "not-found" });
+          } else if (isMissingAccess(membershipStatus)) {
+            setAccess({ slug: currentSlug, token, status: "not-found" });
+          } else {
+            setAccess({ slug: currentSlug, token, status: "error" });
+          }
+          return;
+        }
+
+        const currentOrganisation = Array.isArray(organisations)
+          ? organisations.find((organisation) => organisation?.id === orgId)
+          : null;
+        if (!currentOrganisation) {
+          setAccess({ slug: currentSlug, token, status: "not-found" });
+          return;
+        }
+
+        const profileResponse = (await GetRequest("/profile")) as ApiResult;
+        if (cancelled) return;
+        const profileStatus = getResponseStatus(profileResponse);
+        if (!isSuccess(profileStatus)) {
+          if (isUnauthorizedResponse(profileResponse)) {
+            handleSessionExpired();
+            setAccess({ slug: currentSlug, token, status: "not-found" });
+          } else if (isMissingAccess(profileStatus)) {
+            setAccess({ slug: currentSlug, token, status: "not-found" });
+          } else {
+            setAccess({ slug: currentSlug, token, status: "error" });
+          }
+          return;
+        }
+
+        dispatch({ type: ACTIONS.ORG_DATA, payload: currentOrganisation });
+        dispatch({ type: ACTIONS.USER, payload: profileResponse.data?.data });
+        verifiedSessionRef.current = {
+          token,
+          orgId,
+          slug: currentSlug,
+          profileCallback,
+        };
+        setAccess({ slug: currentSlug, token, status: "ready" });
+        return;
+      }
+
+      if (!currentSlug || currentSlug === "undefined" || !token) {
+        verifiedSessionRef.current = null;
+        setAccess({
+          slug: currentSlug,
+          token: token || "",
+          status: "not-found",
+        });
         return;
       }
 
       const profileCallback = state?.profileCallback ?? false;
-      const shouldRefetchProfile =
-        !fetchedSessionRef.current ||
-        fetchedSessionRef.current.token !== token ||
-        fetchedSessionRef.current.orgId !== orgId ||
-        fetchedSessionRef.current.profileCallback !== profileCallback;
-
-      if (!shouldRefetchProfile) {
-        setLoading(false);
+      const previousSession = verifiedSessionRef.current;
+      if (
+        previousSession?.token === token &&
+        previousSession.orgId === orgId &&
+        previousSession.slug === currentSlug &&
+        previousSession.profileCallback === profileCallback
+      ) {
+        setAccess({ slug: currentSlug, token, status: "ready" });
         return;
       }
 
-      try {
-        // 2. Parallel API calls for performance
-        const [profileRes, orgRes] = await Promise.all([
-          GetRequest(`/profile`),
-          GetRequest(`/organisations/${orgId}`),
-        ]);
+      setAccess({ slug: currentSlug, token, status: "checking" });
 
-        if (
-          isUnauthorizedResponse(profileRes) ||
-          isUnauthorizedResponse(orgRes)
-        ) {
-          fetchedSessionRef.current = null;
-          handleSessionExpired();
-          return;
-        }
+      const requestKey = `${token}:${currentSlug}`;
+      let switchResponsePromise =
+        switchRequestRef.current?.key === requestKey
+          ? switchRequestRef.current.promise
+          : null;
 
-        // Handle Profile Response
-        if (profileRes?.status === 200 || profileRes?.status === 201) {
-          dispatch({ type: ACTIONS.USER, payload: profileRes?.data?.data });
-        }
-
-        // Handle Org Response
-        if (orgRes?.status === 200 || orgRes?.status === 201) {
-          const organisationSlug =
-            orgRes.data.data.organisation_slug ||
-            orgRes.data.data.current_organisation_slug ||
-            pathname.split("/")[1];
-
-          if (organisationSlug && organisationSlug !== "undefined") {
-            localStorage.setItem("orgSlug", organisationSlug);
-            dispatch({
-              type: ACTIONS.ORG_SLUG,
-              payload: organisationSlug,
-            });
-          }
-          dispatch({
-            type: ACTIONS.ORG_DATA,
-            payload: orgRes.data.data,
+      if (!switchResponsePromise) {
+        const queuedRequest = switchQueueRef.current
+          .catch(() => undefined)
+          .then(async () => {
+            // The backend verifies membership and returns a token scoped to the
+            // requested organisation. It revokes the previous token on success,
+            // so queued route changes must use the newest token in storage.
+            const response = (await GetRequest(
+              `/users/switch-org/${encodeURIComponent(currentSlug)}`
+            )) as ApiResult;
+            const responseStatus = getResponseStatus(response);
+            const data = response?.data?.data;
+            if (
+              isSuccess(responseStatus) &&
+              typeof data?.access_token === "string" &&
+              typeof data?.organisation?.id === "string" &&
+              data?.current_organisation_slug === currentSlug
+            ) {
+              localStorage.setItem("token", data.access_token);
+              localStorage.setItem("orgId", data.organisation.id);
+              localStorage.setItem("orgSlug", data.current_organisation_slug);
+            }
+            return response;
           });
-        } else {
-          // Org fetch failed — still seed slug from the URL so ClientLayout
-          // does not treat a missing slug as an org switch and flash /404.
-          const urlSlug = pathname.split("/")[1];
-          if (urlSlug && urlSlug !== "undefined" && urlSlug !== "client") {
-            localStorage.setItem("orgSlug", urlSlug);
-            dispatch({
-              type: ACTIONS.ORG_SLUG,
-              payload: urlSlug,
-            });
+        switchResponsePromise = queuedRequest;
+        switchRequestRef.current = { key: requestKey, promise: queuedRequest };
+        switchQueueRef.current = queuedRequest.then(
+          () => undefined,
+          () => undefined
+        );
+        void queuedRequest.then(
+          () => {
+            if (switchRequestRef.current?.promise === queuedRequest) {
+              switchRequestRef.current = null;
+            }
+          },
+          () => {
+            if (switchRequestRef.current?.promise === queuedRequest) {
+              switchRequestRef.current = null;
+            }
           }
-        }
-
-        fetchedSessionRef.current = { token, orgId, profileCallback };
-      } catch (error) {
-        console.error("AuthGuard Initialization Error:", error);
-        fetchedSessionRef.current = null;
-        if (!pathname.startsWith("/auth")) {
-          router.push(loginUrl);
-        }
-      } finally {
-        setLoading(false);
+        );
       }
+
+      if (!switchResponsePromise) {
+        setAccess({ slug: currentSlug, token, status: "error" });
+        return;
+      }
+
+      let switchResponse: ApiResult;
+      try {
+        switchResponse = await switchResponsePromise;
+      } catch (error) {
+        if (!cancelled) {
+          console.error("AuthGuard organisation validation failed:", error);
+          setAccess({ slug: currentSlug, token, status: "error" });
+        }
+        return;
+      }
+      if (cancelled) return;
+
+      const switchStatus = getResponseStatus(switchResponse);
+      if (!isSuccess(switchStatus)) {
+        if (isUnauthorizedResponse(switchResponse)) {
+          handleSessionExpired();
+          setAccess({ slug: currentSlug, token, status: "not-found" });
+        } else if (isMissingAccess(switchStatus)) {
+          setAccess({ slug: currentSlug, token, status: "not-found" });
+        } else {
+          setAccess({ slug: currentSlug, token, status: "error" });
+        }
+        return;
+      }
+
+      const switchData = switchResponse.data?.data;
+      const nextToken = switchData?.access_token;
+      const nextOrg = switchData?.organisation;
+      const nextSlug = switchData?.current_organisation_slug;
+      if (
+        typeof nextToken !== "string" ||
+        typeof nextOrg?.id !== "string" ||
+        nextSlug !== currentSlug
+      ) {
+        setAccess({ slug: currentSlug, token, status: "not-found" });
+        return;
+      }
+
+      token = nextToken;
+      const verifiedOrgId: string = nextOrg.id;
+      orgId = verifiedOrgId;
+      dispatch({ type: ACTIONS.TOKEN, payload: token });
+      dispatch({ type: ACTIONS.ORG_ID, payload: verifiedOrgId });
+      dispatch({ type: ACTIONS.ORG_SLUG, payload: nextSlug });
+      dispatch({ type: ACTIONS.ORG_DATA, payload: nextOrg });
+
+      const profileResponse = (await GetRequest("/profile")) as ApiResult;
+      if (cancelled) return;
+      const profileStatus = getResponseStatus(profileResponse);
+      if (!isSuccess(profileStatus)) {
+        if (isUnauthorizedResponse(profileResponse)) {
+          handleSessionExpired();
+          setAccess({ slug: currentSlug, token, status: "not-found" });
+        } else if (isMissingAccess(profileStatus)) {
+          setAccess({ slug: currentSlug, token, status: "not-found" });
+        } else {
+          setAccess({ slug: currentSlug, token, status: "error" });
+        }
+        return;
+      }
+
+      dispatch({ type: ACTIONS.USER, payload: profileResponse.data?.data });
+      verifiedSessionRef.current = {
+        token,
+        orgId: verifiedOrgId,
+        slug: currentSlug,
+        profileCallback,
+      };
+      setAccess({ slug: currentSlug, token, status: "ready" });
     };
 
-    initializeApp();
-  }, [dispatch, pathname, searchParams, router, state?.profileCallback]);
+    void initializeApp();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentSlug,
+    dispatch,
+    pathname,
+    retryCount,
+    search,
+    searchParams,
+    state?.profileCallback,
+  ]);
 
-  if (loading) return null;
+  const isAccessExempt =
+    isReservedPathSegment(currentSlug) ||
+    isBuzzDetailsRoute(pathname) ||
+    isRecorderRoute(pathname);
+
+  if (isAccessExempt) {
+    return (
+      <>
+        <AuthSessionSetup />
+        {children}
+      </>
+    );
+  }
+
+  // A route slug or session change invalidates the previous verification
+  // synchronously, before the new effect runs.
+  const activeAccess =
+    access?.slug === currentSlug && access.token === sessionToken
+      ? access
+      : null;
+
+  if (!activeAccess || activeAccess.status === "checking") return null;
+  if (activeAccess.status === "not-found") {
+    return (
+      <AccessView
+        title="Page not found"
+        message="The page you requested could not be found."
+      />
+    );
+  }
+  if (activeAccess.status === "error") {
+    return (
+      <AccessView
+        title="Workspace unavailable"
+        message="We could not load this page. Please try again."
+        onRetry={() => setRetryCount((count) => count + 1)}
+      />
+    );
+  }
 
   return (
     <>
