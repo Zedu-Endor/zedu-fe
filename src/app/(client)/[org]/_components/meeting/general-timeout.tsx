@@ -12,7 +12,7 @@ const GeneralTimeout = ({ handleLeave }: { handleLeave: any }) => {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const { state } = useContext(DataContext);
-  const { orgSlug, buzzData: currentBuzz } = state;
+  const { orgSlug, buzzData: currentBuzz, user } = state;
   const { id } = useParams() as { id: string };
 
   // Constants
@@ -22,7 +22,16 @@ const GeneralTimeout = ({ handleLeave }: { handleLeave: any }) => {
   const handleTerminateMeeting = async () => {
     try {
       handleLeave && handleLeave();
-      await PostRequest(`/buzz/${id}/end`, {});
+      const isHost = Boolean(
+        currentBuzz?.host_id &&
+        (currentBuzz.host_id === user?.user_id ||
+          currentBuzz.host_id === user?.id)
+      );
+      if (isHost) {
+        await PostRequest(`/buzz/${id}/end`, {});
+      } else {
+        await PostRequest(`/buzz/${id}/leave`, {});
+      }
       window.location.href = `/${orgSlug}/buzz`;
     } catch (err) {
       // handleLeave && handleLeave();
