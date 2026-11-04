@@ -290,7 +290,7 @@ const AboutPage = () => {
           <p className="max-w-[95%] text-sm leading-relaxed text-neutral-100 sm:max-w-[90%] sm:text-base md:max-w-[75%] lg:max-w-[60%] lg:text-lg">
             We believe the future of education is structured, AI-assisted, and
             built for engagement. Zedu exists to make organized learning the
-            standard not the exception.
+            standard, not the exception.
           </p>
         </div>
       </section>
