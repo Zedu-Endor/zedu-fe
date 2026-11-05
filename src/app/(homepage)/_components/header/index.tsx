@@ -271,7 +271,8 @@ const Header: React.FC = () => {
             <Button
               ref={menuButtonRef}
               type="button"
-              variant="ghost" size="icon"
+              variant="ghost"
+              size="icon"
               aria-label={
                 isOpen ? "Close navigation menu" : "Open navigation menu"
               }
