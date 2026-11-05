@@ -306,7 +306,7 @@ const Header: React.FC = () => {
           <nav
             id="mobile-navigation"
             aria-label="Mobile navigation"
-            className="fixed inset-x-0 toitems-center justify-center hover z-50 h-full overflow-y-auto bg-gradient-to-b from-[#5A34C6] to-[#4A2BA3] px-4 pt-20 lg:hidden [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2"
+            className="fixed inset-x-0 top-0 z-50 h-full overflow-y-auto bg-gradient-to-b from-[#5A34C6] to-[#4A2BA3] px-4 pt-20 lg:hidden [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2"
           >
             <div className="flex flex-col justify-between gap-4 py-4">
               <div className="flex flex-col gap-4 text-white">
