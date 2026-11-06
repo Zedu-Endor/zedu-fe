@@ -27,6 +27,7 @@ import PinMessageDialog from "../pin-message-modal";
 import { buildMessageLink, getMessageLinkContext } from "~/utils/message-link";
 import { orgSlugFromPathname } from "~/lib/reserved-paths";
 import { showInfo } from "~/components/toast/sonner";
+import RemindMeSubmenu from "./remind-me-submenu";
 
 const MessageContextMenu = ({ item }: any) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -160,17 +161,12 @@ const MessageContextMenu = ({ item }: any) => {
 
             <hr />
 
-            {/* <div className="group flex items-center justify-between px-4 py-1 my-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Clock size={16} />
-                <span>Remind me about this</span>
-              </div>
-              <span className="ml-4 text-xs text-gray-400 group-hover:text-white">
-                {">"}
-              </span>
-            </div>
-
-            <hr /> */}
+            <RemindMeSubmenu
+              channelsId={id}
+              threadId={item?.thread_id}
+              type="thread"
+              onDone={() => setIsPopoverOpen(false)}
+            />
 
             <div
               onClick={handleCopyLink}

@@ -138,6 +138,30 @@ const reducers = (state: any, action: any) => {
         showIncomingCallPopup: false,
         incomingCallInfo: null,
       };
+    case ACTIONS.ENQUEUE_REMINDER_POPUP: {
+      // A reminder is delivered once; ignore a replay of one already queued.
+      const queued = state.reminderPopups || [];
+      if (
+        queued.some(
+          (reminder: any) =>
+            reminder?.reminder_id === action.payload?.reminder_id
+        )
+      ) {
+        return state;
+      }
+      return { ...state, reminderPopups: [...queued, action.payload] };
+    }
+    case ACTIONS.REMINDERS_COUNT:
+      return { ...state, remindersCount: action.payload };
+    case ACTIONS.REMINDERS_CALLBACK:
+      return { ...state, remindersCallback: !state.remindersCallback };
+    case ACTIONS.DISMISS_REMINDER_POPUP:
+      return {
+        ...state,
+        reminderPopups: (state.reminderPopups || []).filter(
+          (reminder: any) => reminder?.reminder_id !== action.payload
+        ),
+      };
     case "TOGGLE_AGENT": {
       const existing = state.activatedAgents || [];
       const index = existing.findIndex(

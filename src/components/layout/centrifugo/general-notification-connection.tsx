@@ -37,6 +37,7 @@ export default function GeneralNotificationConnection() {
 
   const routeUrl = `${CLIENT_URL}${pathname}`;
   const audioPlayer = useRef<HTMLAudioElement | null>(null);
+  const shownRemindersRef = useRef<Set<string>>(new Set());
   const participantsRef = useRef<any[]>(state?.buzzParticipants || []);
   const hasJoinedRef = useRef(state.hasJoined);
 
@@ -188,6 +189,23 @@ export default function GeneralNotificationConnection() {
             type: ACTIONS.UNSEEN_THREAD_COUNT,
             payload: unseen,
           });
+        }
+      }
+
+      // Reminder fired. The server delivers each one once, so a replay after a
+      // reconnect must not produce a second pop-up.
+      if (result?.notification_type === "message_reminder") {
+        const reminder = result?.data;
+        const reminderId = reminder?.reminder_id;
+
+        if (reminderId && !shownRemindersRef.current.has(reminderId)) {
+          shownRemindersRef.current.add(reminderId);
+          dispatch({
+            type: ACTIONS.ENQUEUE_REMINDER_POPUP,
+            payload: reminder,
+          });
+          // A fired reminder leaves the pending list, so the badge must resync.
+          dispatch({ type: ACTIONS.REMINDERS_CALLBACK });
         }
       }
 
