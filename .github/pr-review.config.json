@@ -31,6 +31,7 @@
       "src/app/(homepage)/referrals/page.tsx",
       "src/app/(homepage)/badge/page.tsx",
       "src/app/(client)/[org]/home/channels/[id]/settings/page.tsx",
+      "src/app/(client)/[org]/reminders/page.tsx",
       "src/app/(homepage)/confirm-subscription/page.tsx",
       "src/app/(client)/[org]/home/channels/[id]/settings/history/page.tsx",
       "src/app/(homepage)/solutions/study-groups/page.tsx",
