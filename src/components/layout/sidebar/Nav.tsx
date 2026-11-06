@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { DataContext } from "~/store/GlobalState";
 import { ACTIONS } from "~/store/Actions";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { ChevronRight, PlusIcon } from "lucide-react";
+import { ChevronRight, Clock, PlusIcon } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -21,6 +21,7 @@ import OrganisationMenu from "~/app/(client)/[org]/_components/org-dropdown";
 import Tooltips from "~/app/(client)/[org]/_components/tooltip";
 import { formatCount } from "~/utils/utils";
 import { parseStoredAccordions } from "~/utils/stored-accordions";
+import { useRemindersCount } from "~/hooks/use-reminders-count";
 // import AddColleagueDialog from "~/app/(client)/[org]/_components/colleagues/add-colleagues-modal";
 // import { ColleaguesCard } from "~/app/(client)/[org]/_components/colleagues/card";
 
@@ -93,6 +94,9 @@ export default function ChannelNav({
   const threadsReady = Array.isArray(state?.threadMentions);
   const unseenThreadCount = state?.unseenThreadCount ?? 0;
   const showThreadsBadge = unseenThreadCount > 0;
+  const remindersCount = state?.remindersCount ?? 0;
+
+  useRemindersCount();
 
   const starredChannels = channelsReady
     ? state.channels
@@ -197,6 +201,37 @@ export default function ChannelNav({
               </p>
             </Link>
           )}
+
+          <Link
+            href={`/${orgSlug}/reminders`}
+            className={cn(
+              "relative flex-1 flex items-center gap-[2px] py-[7px] px-2 mx-2 mt-2 hover:bg-blue-200 hover:text-white rounded-lg ",
+              pathname.includes("/reminders") ? "bg-blue-200" : ""
+            )}
+          >
+            <div className="mt-[2px]">
+              <Clock size={16} className="text-blue-50" />
+            </div>
+            <p
+              className={cn(
+                "text-[15px] leading-4 truncate w-[180px] text-blue-50 ml-[2px]"
+              )}
+            >
+              Reminders
+            </p>
+            {remindersCount > 0 && (
+              <div
+                className={cn(
+                  "absolute right-3 flex items-center justify-center rounded-full bg-blue-200 text-white tracking-[-0.5%] font-bold text-right text-[10px] px-2 min-w-[1.25rem]",
+                  pathname.includes("/reminders")
+                    ? "bg-blue-500 text-white"
+                    : ""
+                )}
+              >
+                {formatCount(remindersCount)}
+              </div>
+            )}
+          </Link>
 
           <div className="">
             {channelsReady && (

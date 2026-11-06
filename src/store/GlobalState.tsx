@@ -43,6 +43,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     orgAccessLoading: false,
 
     notifications: [],
+    reminderPopups: [],
+    remindersCount: 0,
+    remindersCallback: false,
     messages: [],
     chats: [],
     dms: [],

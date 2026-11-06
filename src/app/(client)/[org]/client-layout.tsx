@@ -21,6 +21,7 @@ import { UploadProvider } from "~/store/UploadContext";
 import UploadProgressPopover from "./_components/file-management/UploadProgressPopover";
 import FirebasePush from "~/components/layout/firebase/firebase-push";
 import IncomingCallPopupContainer from "~/app/(client)/[org]/_components/buzz-management/IncomingCallPopupContainer";
+import ReminderPopupContainer from "~/app/(client)/[org]/_components/reminders/reminder-popup-container";
 import StatusConnection from "~/components/layout/centrifugo/status-connection";
 import ChatBuzzSidePanel from "./_components/buzz-management/chatBuzzSidePanel";
 import GeneralNotificationConnection from "~/components/layout/centrifugo/general-notification-connection";
@@ -402,6 +403,7 @@ const ClientLayout = ({
         </ChannelBuzzProvider>
         <UploadProgressPopover />
         <IncomingCallPopupContainer />
+        <ReminderPopupContainer />
       </TooltipProvider>
     </UploadProvider>
   );

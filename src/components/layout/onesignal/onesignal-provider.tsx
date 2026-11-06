@@ -152,6 +152,13 @@ export default function OneSignalProvider() {
       const foregroundData = getNotificationData(event?.notification);
       resyncMessagesFromPush(foregroundData);
 
+      // The Centrifugo pop-up already covers a fired reminder in the
+      // foreground; let the native one through only when backgrounded.
+      if (foregroundData?.notification_type === "message_reminder") {
+        event?.preventDefault?.();
+        return;
+      }
+
       if (foregroundData?.notification_type === "direct_call_initialized") {
         if (audioPlayer.current) {
           audioPlayer.current.currentTime = 0;
