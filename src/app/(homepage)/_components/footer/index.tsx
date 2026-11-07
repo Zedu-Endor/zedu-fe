@@ -63,6 +63,7 @@ const resourcesLinks: FooterLink[] = [
   { id: 1, label: "Templates", href: "/templates" },
   { id: 2, label: "Privacy Policy", href: "/policy" },
   { id: 3, label: "Terms of Service", href: "/terms-of-service" },
+  { id: 4, label: "Changelog", href: "/changelog" },
 ];
 
 const footerSections = [
