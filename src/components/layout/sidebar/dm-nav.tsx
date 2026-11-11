@@ -22,6 +22,7 @@ import UserAvatar from "~/components/layout/user-avatar";
 import { isUserDeactivated } from "~/utils/user-deactivation";
 import { useOrganisationDms } from "~/hooks/useOrganisationDms";
 import { PostRequest } from "~/utils/new-request";
+import { pinFavouritesFirst } from "~/lib/dm/favourites";
 
 const isPersonalDm = (dm: any, userId: string | undefined) => {
   if (!userId) return false;
@@ -47,6 +48,10 @@ const dedupeDmList = (dms: any[] | undefined) => {
   return list;
 };
 
+/**
+ * The DMs to list: deduplicated, favourited people first. With a search,
+ * only matches are kept and each group is ordered by how well it matches.
+ */
 const filterDmList = (
   dms: any[] | undefined,
   rawQuery: string,
@@ -54,7 +59,7 @@ const filterDmList = (
 ) => {
   const list = dedupeDmList(dms);
   const query = rawQuery.trim().toLowerCase();
-  if (!query) return list;
+  if (!query) return pinFavouritesFirst(list);
 
   const words = query.split(/\s+/).filter(Boolean);
 
@@ -116,7 +121,7 @@ const filterDmList = (
     return best;
   };
 
-  return list
+  const matches = list
     .map((dm) => {
       const userScore = scoreUserMatch(getUserFields(dm));
       const chatScore = scoreChatMatch(getChatFields(dm));
@@ -139,6 +144,8 @@ const filterDmList = (
       );
     })
     .map(({ dm }) => dm);
+
+  return pinFavouritesFirst(matches);
 };
 
 export default function DMNav({

@@ -13,6 +13,7 @@ import {
 import { ChatBubbleIcon, DropdownIcon, HeadphoneIcon } from "~/svgs";
 import { ChannelCard } from "~/app/(client)/[org]/_components/ChannelCard";
 import { cn } from "~/lib/utils";
+import { pinFavouritesFirst } from "~/lib/dm/favourites";
 import { PeopleHomeCard } from "~/app/(client)/[org]/_components/people-card";
 import Link from "next/link";
 import InviteModal from "~/app/(client)/[org]/_components/invite-modal";
@@ -111,18 +112,6 @@ export default function ChannelNav({
         return nameA.localeCompare(nameB);
       })
     : [];
-
-  /** Returns the DM list with favourited entries first, stable order within each group. */
-  const sortHomeDmsFavouritesFirst = (dms: any[]) => {
-    const favourites: any[] = [];
-    const rest: any[] = [];
-
-    for (const dm of dms) {
-      (dm?.is_favourite ? favourites : rest).push(dm);
-    }
-
-    return [...favourites, ...rest];
-  };
 
   return (
     <>
@@ -370,7 +359,7 @@ export default function ChannelNav({
                   </Tooltips>
                 </div>
                 <AccordionContent onClick={handleClose}>
-                  {sortHomeDmsFavouritesFirst(state.homeDms).map(
+                  {pinFavouritesFirst(state.homeDms).map(
                     (item: any, index: number) => (
                       <div
                         className="mb-1"
