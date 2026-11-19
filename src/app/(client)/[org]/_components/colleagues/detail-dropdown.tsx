@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
+import { openConversationInNewWindow } from "~/utils/open-in-new-window";
 
 interface MenuDropdownProps {
   isOpen: boolean;
@@ -93,7 +94,10 @@ const DetailDropdown = ({
 
         <div
           className={menuItemClass}
-          onClick={() => console.log("Open in new window")}
+          onClick={() => {
+            openConversationInNewWindow();
+            onClose();
+          }}
         >
           Open in new window
         </div>
