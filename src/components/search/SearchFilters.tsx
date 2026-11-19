@@ -8,7 +8,6 @@ import {
 } from "~/components/ui/popover";
 
 interface SearchFiltersProps {
-  // eslint-disable-next-line no-unused-vars
   onFilterChange: (filters: {
     type?: "messages" | "people";
     from?: string;
@@ -199,6 +198,30 @@ export const SearchFilters = ({
       sortBy,
     });
   };
+
+  const hasActiveFilters = Boolean(
+    selectedFrom ||
+    selectedChannel ||
+    selectedDate ||
+    selectedType !== "messages" ||
+    sortBy !== "relevance"
+  );
+
+  const clearAllFilters = () => {
+    setSelectedType("messages");
+    setSelectedFrom(null);
+    setSelectedChannel(null);
+    setSelectedDate(null);
+    setSortBy("relevance");
+    onFilterChange({
+      type: "messages",
+      from: undefined,
+      channel: undefined,
+      date: undefined,
+      sortBy: "relevance",
+    });
+  };
+
   return (
     <div className="flex items-center gap-3 mb-6 flex-wrap">
       {/* Type Filter - Messages/People */}

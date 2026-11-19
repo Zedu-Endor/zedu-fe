@@ -25,7 +25,7 @@ import UserAvatar from "~/components/layout/user-avatar";
 import { DeactivationBadge } from "~/components/layout/deactivation-badge";
 import TableEmptyState from "../table-empty-state";
 import { Member } from "./type";
-import { Pencil, Search, Trash2, UserCheck } from "lucide-react";
+import { Pencil, Search, Trash2, UserCheck, X } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -220,6 +220,18 @@ export default function MembersTable({
       id: "member",
       accessorFn: (row) =>
         `${getMemberDisplayName(row)} ${row.email} ${row.username || ""}`,
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue) return true;
+        const query = String(filterValue).toLowerCase().trim();
+        const displayName = getMemberDisplayName(row.original).toLowerCase();
+        const email = String(row.original.email ?? "").toLowerCase();
+        const username = String(row.original.username ?? "").toLowerCase();
+        return (
+          displayName.includes(query) ||
+          email.includes(query) ||
+          username.includes(query)
+        );
+      },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -256,6 +268,11 @@ export default function MembersTable({
     },
     {
       accessorKey: "role",
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue || filterValue === "all") return true;
+        const role = String(row.getValue(columnId) ?? "").toLowerCase();
+        return role === String(filterValue).toLowerCase();
+      },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -377,6 +394,25 @@ export default function MembersTable({
   const currentPage = pagination.pageIndex + 1;
   const totalPages = pagination.pageCount;
 
+  const activeRole =
+    (table.getColumn("role")?.getFilterValue() as string) || "all";
+  const activeStatus =
+    (table.getColumn("status")?.getFilterValue() as string) || "all";
+  const hasActiveFilters =
+    searchValue.trim() !== "" ||
+    (activeRole !== "all" && activeRole !== "") ||
+    (activeStatus !== "all" && activeStatus !== "");
+
+  const clearAllFilters = () => {
+    setSearchValue("");
+    onSearchChange("");
+    table.getColumn("member")?.setFilterValue(undefined);
+    table.getColumn("role")?.setFilterValue("");
+    onRoleChange("");
+    table.getColumn("status")?.setFilterValue("");
+    onStatusChange?.("");
+  };
+
   if (isLoading) {
     return (
       <div className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 mt-6 rounded-xl overflow-hidden py-16 flex justify-center items-center">
@@ -464,6 +500,70 @@ export default function MembersTable({
           </div>
         </div>
 
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 bg-gray-50/70 dark:bg-zinc-900/40 border-b border-gray-100 dark:border-zinc-800 flex-wrap text-xs">
+            <span className="text-gray-500 dark:text-zinc-400 font-medium">
+              Active filters:
+            </span>
+            {searchValue.trim() !== "" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                Search: &quot;{searchValue}&quot;
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchValue("");
+                    onSearchChange("");
+                    table.getColumn("member")?.setFilterValue(undefined);
+                  }}
+                  className="hover:text-purple-900 dark:hover:text-purple-100"
+                  aria-label="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {activeRole !== "all" && activeRole !== "" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 capitalize">
+                Role: {activeRole}
+                <button
+                  type="button"
+                  onClick={() => {
+                    table.getColumn("role")?.setFilterValue("");
+                    onRoleChange("");
+                  }}
+                  className="hover:text-purple-900 dark:hover:text-purple-100"
+                  aria-label="Clear role filter"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {activeStatus !== "all" && activeStatus !== "" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 capitalize">
+                Status: {activeStatus}
+                <button
+                  type="button"
+                  onClick={() => {
+                    table.getColumn("status")?.setFilterValue("");
+                    onStatusChange?.("");
+                  }}
+                  className="hover:text-purple-900 dark:hover:text-purple-100"
+                  aria-label="Clear status filter"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-xs text-red-600 dark:text-red-400 hover:underline font-medium ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
         {membersData.length > 0 || searchValue !== "" ? (
           <>
             {/* Desktop Table View (>= 768px) */}
@@ -510,10 +610,23 @@ export default function MembersTable({
                     <TableRow>
                       <TableCell
                         colSpan={columns.length}
-                        className="h-24 text-center text-gray-500 dark:text-zinc-400"
+                        className="h-28 text-center text-gray-500 dark:text-zinc-400"
                       >
-                        No members found
-                        {searchValue ? ` for "${searchValue}"` : ""}.
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <p>
+                            No members found
+                            {searchValue ? ` for "${searchValue}"` : ""}.
+                          </p>
+                          {hasActiveFilters && (
+                            <button
+                              type="button"
+                              onClick={clearAllFilters}
+                              className="px-3 py-1 text-xs font-medium border border-gray-300 dark:border-zinc-700 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                            >
+                              Clear filters
+                            </button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}

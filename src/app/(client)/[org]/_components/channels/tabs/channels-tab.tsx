@@ -92,19 +92,33 @@ export default function ChannelsTab() {
 
   const filteredChannels = search(allChannels, searchInput);
 
+  const hasActiveFilters =
+    filter !== "All channels" ||
+    channelType !== "All channel type" ||
+    searchInput.trim() !== "";
+
+  const clearAllFilters = () => {
+    setFilter("All channels");
+    setChannelType("All channel type");
+    setSearchInput("");
+  };
+
   const processedData = filteredChannels
     ?.filter((channel: Channel) => {
       let matchesStatus = true;
       if (filter === "My channels") matchesStatus = isJoined(channel);
       else if (filter === "Other channels") matchesStatus = !isJoined(channel);
       else if (filter === "Archived channels")
-        matchesStatus = channel.isArchived === true;
+        matchesStatus = Boolean(
+          channel.isArchived ||
+          (channel as any).is_archived ||
+          (channel as any).archived
+        );
 
+      const isPrivate = Boolean(channel.is_private ?? (channel as any).private);
       let matchesType = true;
-      if (channelType === "Public channels")
-        matchesType = channel.is_private === false;
-      else if (channelType === "Private channels")
-        matchesType = channel.is_private === true;
+      if (channelType === "Public channels") matchesType = !isPrivate;
+      else if (channelType === "Private channels") matchesType = isPrivate;
 
       return matchesStatus && matchesType;
     })
@@ -298,6 +312,60 @@ export default function ChannelsTab() {
         </div>
       </div>
 
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap text-xs">
+          <span className="text-gray-500 dark:text-zinc-400 font-medium">
+            Active filters:
+          </span>
+          {searchInput.trim() !== "" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              Search: &quot;{searchInput}&quot;
+              <button
+                type="button"
+                onClick={() => setSearchInput("")}
+                className="hover:text-blue-900 dark:hover:text-blue-100"
+                aria-label="Clear search filter"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
+          {filter !== "All channels" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              {filter}
+              <button
+                type="button"
+                onClick={() => setFilter("All channels")}
+                className="hover:text-blue-900 dark:hover:text-blue-100"
+                aria-label="Clear channel status filter"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
+          {channelType !== "All channel type" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              {channelType}
+              <button
+                type="button"
+                onClick={() => setChannelType("All channel type")}
+                className="hover:text-blue-900 dark:hover:text-blue-100"
+                aria-label="Clear channel type filter"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-xs text-red-600 dark:text-red-400 hover:underline font-medium ml-1"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       <div className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-white/10">
         {paginatedData && paginatedData.length > 0 ? (
           paginatedData.map((channel: Channel, index: number) => (
@@ -366,8 +434,17 @@ export default function ChannelsTab() {
             </div>
           ))
         ) : (
-          <div className="p-20 text-center text-gray-500 dark:text-zinc-400 italic">
-            No channels found matching these criteria.
+          <div className="p-16 text-center text-gray-500 dark:text-zinc-400 flex flex-col items-center justify-center gap-3">
+            <p className="italic">No channels found matching these criteria.</p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-zinc-700 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         )}
       </div>

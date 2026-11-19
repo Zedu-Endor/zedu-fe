@@ -20,6 +20,7 @@ const Page = () => {
   const [membersTotalItems, setMembersTotalItems] = useState(0);
   const [membersSearch, setMembersSearch] = useState("");
   const [membersRole, setMembersRole] = useState("");
+  const [membersStatus, setMembersStatus] = useState("");
   const [isMembersLoading, setIsMembersLoading] = useState(false);
 
   const [invitesData, setInvitesData] = useState<any[]>([]);
@@ -41,6 +42,9 @@ const Page = () => {
     if (membersRole) {
       url += `&role=${membersRole}`;
     }
+    if (membersStatus) {
+      url += `&status=${membersStatus}`;
+    }
 
     const response = await GetRequest(url);
     if (response?.status === 200 || response?.status === 201) {
@@ -49,7 +53,7 @@ const Page = () => {
       setMembersTotalItems(response?.data?.pagination?.total_items || 0);
     }
     setIsMembersLoading(false);
-  }, [membersPage, membersSearch, membersRole]);
+  }, [membersPage, membersSearch, membersRole, membersStatus]);
 
   const getOrganisationInvites = useCallback(async () => {
     const orgId = localStorage.getItem("orgId");
@@ -65,7 +69,7 @@ const Page = () => {
     if (response?.status === 200 || response?.status === 201) {
       const allInvites = response?.data?.data || [];
       const invitedOnly = allInvites.filter(
-        (item: any) => item.status === "invited"
+        (item: any) => String(item.status || "").toLowerCase() === "invited"
       );
       setInvitesData(invitedOnly);
       setInvitesTotalPages(response?.data?.pagination?.total_pages || 0);
@@ -154,6 +158,10 @@ const Page = () => {
               }}
               onRoleChange={(val) => {
                 setMembersRole(val);
+                setMembersPage(1);
+              }}
+              onStatusChange={(val) => {
+                setMembersStatus(val);
                 setMembersPage(1);
               }}
               onMemberRoleUpdated={handleMemberRoleUpdated}
