@@ -24,11 +24,13 @@ import UserAvatar from "~/components/layout/user-avatar";
 import { isUserDeactivated } from "~/utils/user-deactivation";
 import { useMessageHighlight } from "~/hooks/use-message-highlight";
 import { useMessageDeepLink } from "~/hooks/use-message-deep-link";
+import { useConversationOrder } from "~/hooks/use-conversation-order";
 
 const PeopleMessage = ({ participant }: any) => {
   const { fetchMoreData, hasMore, loading } = UsePeopleMessage();
   const { state, dispatch } = useContext(DataContext);
   const { chats, user, isEdit, thread, notify, bookmarks, dataId } = state;
+  const { isNewestAtTop } = useConversationOrder();
   const groupedMessages = groupMessagesByDate(chats);
   const params = useParams();
   const id = params.id as string;
@@ -95,20 +97,39 @@ const PeopleMessage = ({ participant }: any) => {
 
   // edit message
   const handleEditMessage = async (content: any) => {
-    // payload
     const payload = {
       content: content,
+      message_id: thread?.thread_id,
+      channel_id: id,
     };
 
-    await PutRequest(
-      `/dms/thread/${thread?.thread_id}/channels/${id}`,
-      payload
-    );
+    await PutRequest(`/dms/channels/${id}/threads`, payload);
     dispatch({
       type: ACTIONS.IS_EDIT,
       payload: false,
     });
   };
+
+  // saved for later messages
+  useEffect(() => {
+    const orgId = localStorage.getItem("orgId") || "";
+
+    const loadSavedChats = async () => {
+      const res = await GetRequest(`/organisations/${orgId}/saved/message`);
+
+      if (res?.status === 200 || res?.status === 201) {
+        const result = res?.data?.data?.map((item: any) => {
+          return item.type === "thread"
+            ? { id: item.id, thread_id: item.thread_id }
+            : { id: item.id };
+        });
+
+        dispatch({ type: ACTIONS.BOOKMARKS, payload: result });
+      }
+    };
+
+    loadSavedChats();
+  }, []);
 
   useMessageDeepLink({
     messages: chats || [],
@@ -123,7 +144,18 @@ const PeopleMessage = ({ participant }: any) => {
     fetchMoreData,
   });
 
-  //
+  const renderDateBadge = (dateLabel: string) => (
+    <div className="relative my-2">
+      <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t border-dotted border-[#E6EAEF]"></div>
+      </div>
+      <div className="relative flex justify-center">
+        <span className="bg-white px-4 py-1 text-[13px] text-[#101828] border border-[#E6EAEF] rounded-[30px]">
+          {dateLabel}
+        </span>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -133,7 +165,7 @@ const PeopleMessage = ({ participant }: any) => {
         height: "100dvh",
         overflowY: "scroll",
         display: "flex",
-        flexDirection: "column-reverse",
+        flexDirection: isNewestAtTop ? "column" : "column-reverse",
         paddingBottom: "var(--chat-composer-height, 140px)",
       }}
       className="w-full"
@@ -154,7 +186,7 @@ const PeopleMessage = ({ participant }: any) => {
       )}
 
       <InfiniteScroll
-        dataLength={chats?.length}
+        dataLength={chats?.length || 0}
         next={fetchMoreData}
         hasMore={hasMore}
         loader={
@@ -164,25 +196,29 @@ const PeopleMessage = ({ participant }: any) => {
         }
         style={{
           display: "flex",
-          flexDirection: "column-reverse",
+          flexDirection: isNewestAtTop ? "column" : "column-reverse",
           overflowY: "visible",
         }}
         scrollableTarget="scrollableDivs"
-        inverse={true}
+        inverse={!isNewestAtTop}
       >
         {Object.entries(groupedMessages)?.map(([dateLabel, threads]: any) => (
           <Fragment key={dateLabel}>
+            {isNewestAtTop && renderDateBadge(dateLabel)}
+
             {threads?.map((item: any, index: number) => {
-              const nextMessage = threads[index + 1];
+              const adjacentMessage = isNewestAtTop
+                ? threads[index - 1]
+                : threads[index + 1];
               const shouldShowAvatar =
-                !nextMessage || nextMessage.user_id !== item.user_id;
+                !adjacentMessage || adjacentMessage.user_id !== item.user_id;
 
               const isSaved = bookmarks?.some(
                 (b: any) => b.thread_id === item.thread_id
               );
 
               return (
-                <React.Fragment key={index}>
+                <React.Fragment key={item?.thread_id || index}>
                   {isEdit && thread?.thread_id === item?.thread_id ? (
                     <div
                       className={`flex mb-5 mt-2 z-10 bg-white px-5 py-3 bg-blue-50 w-full`}
@@ -231,16 +267,7 @@ const PeopleMessage = ({ participant }: any) => {
               );
             })}
 
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-dotted border-[#E6EAEF]"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 py-1 text-[13px] text-[#101828] border border-[#E6EAEF] rounded-[30px]">
-                  {dateLabel}
-                </span>
-              </div>
-            </div>
+            {!isNewestAtTop && renderDateBadge(dateLabel)}
           </Fragment>
         ))}
       </InfiniteScroll>

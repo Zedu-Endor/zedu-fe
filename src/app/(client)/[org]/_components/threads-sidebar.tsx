@@ -3,9 +3,10 @@ import React, { useContext } from "react";
 import { DataContext } from "~/store/GlobalState";
 import { ACTIONS } from "~/store/Actions";
 import MessageBox from "./message-box";
-import { X } from "lucide-react";
+import { ArrowUpDown, X } from "lucide-react";
 import ReplyMessage from "./reply-message";
 import ReplyConnection from "~/components/layout/centrifugo/reply-connection";
+import { useThreadOrder } from "~/hooks/use-conversation-order";
 
 export const THREADS_SIDEBAR_WIDTH_PX = 440;
 
@@ -23,6 +24,7 @@ export function getThreadsSidebarLayoutWidth(
 
 const ThreadsSidebar = ({ handleSendMessage, fetchMoreData, hasMore }: any) => {
   const { state, dispatch } = useContext(DataContext);
+  const { isNewestAtTop, toggleOrder } = useThreadOrder();
 
   const onClose = () => {
     dispatch({ type: ACTIONS.REPLY, payload: false });
@@ -35,7 +37,23 @@ const ThreadsSidebar = ({ handleSendMessage, fetchMoreData, hasMore }: any) => {
       <ReplyConnection />
 
       <div className="relative flex min-h-[56px] shrink-0 items-center justify-between border-b px-4 font-bold text-base sm:min-h-[70px] sm:px-5 lg:text-lg">
-        Thread
+        <div className="flex items-center gap-2">
+          <span>Thread</span>
+          <button
+            type="button"
+            onClick={toggleOrder}
+            className="flex items-center gap-1 rounded-md border border-[#E6EAEF] px-2 py-0.5 text-xs font-normal text-[#475467] hover:bg-[#F9FAFB] transition-colors"
+            title={
+              isNewestAtTop
+                ? "Showing newest replies at top. Click for oldest first."
+                : "Showing oldest replies first. Click for newest at top."
+            }
+            aria-label="Toggle reply sort order"
+          >
+            <ArrowUpDown className="size-3 text-[#667085]" />
+            <span>{isNewestAtTop ? "Newest at top" : "Oldest first"}</span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={onClose}
@@ -47,7 +65,11 @@ const ThreadsSidebar = ({ handleSendMessage, fetchMoreData, hasMore }: any) => {
       </div>
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        <ReplyMessage fetchMoreData={fetchMoreData} hasMore={hasMore} />
+        <ReplyMessage
+          fetchMoreData={fetchMoreData}
+          hasMore={hasMore}
+          isNewestAtTop={isNewestAtTop}
+        />
       </div>
 
       <div className="shrink-0 bg-white pb-[env(safe-area-inset-bottom)]">

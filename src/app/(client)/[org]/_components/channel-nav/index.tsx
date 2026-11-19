@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarImage } from "~/components/ui/avatar";
-import { EllipsisVertical, Hash, Lock, Pin } from "lucide-react";
+import { ArrowUpDown, EllipsisVertical, Hash, Lock, Pin } from "lucide-react";
 import React, { useContext, useRef, useState } from "react";
 
 import { ACTIONS } from "~/store/Actions";
@@ -21,6 +21,7 @@ import {
   DEACTIVATED_AVATAR_SRC,
   isUserDeactivated,
 } from "~/utils/user-deactivation";
+import { useConversationOrder } from "~/hooks/use-conversation-order";
 
 type ChannelHeaderTab = "messages" | "pins";
 
@@ -31,6 +32,7 @@ const ChannelHeader = () => {
   const menuDropdownRef = useRef<HTMLDivElement>(null);
   const { state, dispatch } = useContext(DataContext);
   const { channelDetails, user } = state;
+  const { isNewestAtTop, toggleOrder } = useConversationOrder();
 
   const id = useParams().id as string;
   const detailsMatch =
@@ -211,6 +213,31 @@ const ChannelHeader = () => {
                   </Tooltips>
                 </div>
               </ChannelDetailsDialog>
+
+              <Tooltips
+                side="bottom"
+                text={
+                  isNewestAtTop
+                    ? "Newest messages at top (click for oldest first)"
+                    : "Oldest messages first (click for newest at top)"
+                }
+              >
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "p-2 border-[#E6EAEF] h-9 gap-1 text-xs text-[#344054]",
+                    isNewestAtTop &&
+                      "bg-[#F0F4FF] text-primary-600 border-primary-200"
+                  )}
+                  onClick={toggleOrder}
+                  aria-label="Toggle message sort order"
+                >
+                  <ArrowUpDown className="w-4 h-4 text-[#667085]" />
+                  <span className="hidden xl:inline">
+                    {isNewestAtTop ? "Newest at top" : "Oldest first"}
+                  </span>
+                </Button>
+              </Tooltips>
 
               <div className="relative" ref={menuDropdownRef}>
                 <Tooltips side="bottom" text="More actions">

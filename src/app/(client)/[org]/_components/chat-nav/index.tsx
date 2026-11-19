@@ -1,5 +1,5 @@
 "use client";
-import { EllipsisVertical, HeadphonesIcon } from "lucide-react";
+import { ArrowUpDown, EllipsisVertical, HeadphonesIcon } from "lucide-react";
 import React, { useState, useRef, useContext } from "react";
 import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -17,6 +17,7 @@ import {
   isUserDeactivated,
 } from "~/utils/user-deactivation";
 import StartBuzzConfirmModal from "../buzz-management/start-buzz-confirm-modal";
+import { useConversationOrder } from "~/hooks/use-conversation-order";
 
 const ChatHeader = ({ participants }: any) => {
   const [isMenuDropdownOpen, setIsMenuDropdownOpen] = useState(false);
@@ -24,6 +25,7 @@ const ChatHeader = ({ participants }: any) => {
   const menuDropdownRef = useRef<HTMLDivElement>(null);
   const { state, dispatch } = useContext(DataContext);
   const { user } = state;
+  const { isNewestAtTop, toggleOrder } = useConversationOrder();
   const [startLoading, setStartLoading] = useState(false);
   const [startBuzzConfirmOpen, setStartBuzzConfirmOpen] = useState(false);
 
@@ -100,8 +102,6 @@ const ChatHeader = ({ participants }: any) => {
       ? participantLabel || "Group chat"
       : participants?.[0]?.username || participantLabel || "this chat";
 
-  //
-
   return (
     <nav className="flex items-center justify-between flex-wrap gap-3 p-5 border-b border-[#E6EAEF]">
       <h2 className="text-[#1D2939] text-base lg:text-lg font-bold">
@@ -156,6 +156,26 @@ const ChatHeader = ({ participants }: any) => {
             )}
           </div>
         </button>
+
+        <Button
+          variant="outline"
+          className={cn(
+            "p-2 border-[#E6EAEF] h-9 gap-1 text-xs text-[#344054]",
+            isNewestAtTop && "bg-[#F0F4FF] text-primary-600 border-primary-200"
+          )}
+          onClick={toggleOrder}
+          title={
+            isNewestAtTop
+              ? "Newest messages at top (click for oldest first)"
+              : "Oldest messages first (click for newest at top)"
+          }
+          aria-label="Toggle message sort order"
+        >
+          <ArrowUpDown className="w-4 h-4 text-[#667085]" />
+          <span className="hidden xl:inline">
+            {isNewestAtTop ? "Newest at top" : "Oldest first"}
+          </span>
+        </Button>
 
         <div className="relative" ref={menuDropdownRef}>
           <Button

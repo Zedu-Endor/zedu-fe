@@ -17,10 +17,24 @@ import {
   MESSAGE_HIGHLIGHT_DURATION_MS,
   removeMessageHighlightClasses,
 } from "~/utils/message-highlight";
+import { useThreadOrder } from "~/hooks/use-conversation-order";
 
-const ReplyMessage = ({ fetchMoreData, hasMore }: any) => {
+interface ReplyMessageProps {
+  fetchMoreData: () => void;
+  hasMore: boolean;
+  isNewestAtTop?: boolean;
+}
+
+const ReplyMessage = ({
+  fetchMoreData,
+  hasMore,
+  isNewestAtTop: isNewestAtTopProp,
+}: ReplyMessageProps) => {
   const { state, dispatch } = useContext(DataContext);
   const { replies, user, thread, threadReply, isEditReply, bookmarks } = state;
+  const { isNewestAtTop: isNewestAtTopHook } = useThreadOrder();
+  const isNewestAtTop = isNewestAtTopProp ?? isNewestAtTopHook;
+
   const params = useParams();
   const searchParams = useSearchParams();
   const channelId = (thread?.channels_id || params.id) as string;
@@ -51,7 +65,6 @@ const ReplyMessage = ({ fetchMoreData, hasMore }: any) => {
 
   // edit message
   const handleEditMessage = async (content: any) => {
-    // payload
     const payload = {
       content: content,
       message_id: threadReply?.id,
@@ -86,7 +99,112 @@ const ReplyMessage = ({ fetchMoreData, hasMore }: any) => {
     loadSavedChats();
   }, []);
 
-  //
+  const renderThreadHeader = () => {
+    if (!thread) return null;
+    return (
+      <div className="px-3 mt-4 mb-2">
+        {thread?.type === "thread" ? (
+          <Thread item={thread} compact />
+        ) : (
+          <div className="flex">
+            <UserAvatar item={thread} size="sm" className="mr-2" alt="avatar" />
+
+            <div>
+              <div className="w-full flex items-center gap-2">
+                <span className="font-bold text-[15px] text-[#1D2939]">
+                  {thread?.username || thread?.email}
+                </span>
+
+                <span className="text-xs text-[#98A2B3]">
+                  {new Date(thread?.created_at).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                </span>
+              </div>
+
+              <div className="relative flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageItem item={thread} />
+
+                  <span className="text-[9px] text-neutral-500">
+                    {thread?.edited ? "(edited)" : ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show horizontal divider with reply count */}
+        {replies?.length > 0 && (
+          <div className="flex items-center my-3 mt-5">
+            <hr className="flex-grow border-t border-gray-200" />
+            <span className="text-xs text-gray-500 mx-2 whitespace-nowrap">
+              {replies?.length} {replies?.length === 1 ? "reply" : "replies"}
+            </span>
+            <hr className="flex-grow border-t border-gray-200" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderReplyItems = () =>
+    replies?.map((item: any, index: number) => {
+      const adjacentMessage = isNewestAtTop
+        ? replies[index - 1]
+        : replies[index + 1];
+      const shouldShowAvatar =
+        !adjacentMessage || adjacentMessage.user_id !== item.user_id;
+
+      const isSaved = bookmarks?.some((b: any) => b.id === item.id);
+
+      return (
+        <React.Fragment key={item?.id || index}>
+          {isEditReply && threadReply?.id === item?.id ? (
+            <div
+              className={`flex mb-5 gap-2 mt-2 z-10 bg-white px-2 py-3 bg-blue-50 w-full`}
+            >
+              <UserAvatar item={item} size="sm" className="mb-2" />
+
+              <EditReplyMessageBox
+                subscription={state?.replySubscription}
+                sendMessage={handleEditMessage}
+              />
+            </div>
+          ) : (
+            <>
+              <ReplyMessages
+                item={item}
+                shouldShowAvatar={shouldShowAvatar}
+                setPopupId={setPopupId}
+                popupId={popupId}
+              />
+
+              {item.is_pinned ? (
+                <div className="flex items-center gap-2 bg-yellow-50 pl-10 text-[13px] font-semibold text-blue-100 pt-2">
+                  <Pin size={13} className="text-[#667085] mt-[3px]" />
+                  Pinned by{" "}
+                  {user?.email === item?.pinned_details?.email
+                    ? "you"
+                    : item?.pinned_details?.username}
+                </div>
+              ) : isSaved ? (
+                <div className="flex items-center gap-2 bg-primary-50 pl-10 text-[13px] font-bold text-blue-100 pt-2">
+                  <BookmarkFilledIcon
+                    fontSize={13}
+                    className="text-[#667085]"
+                  />
+                  Saved for Later
+                </div>
+              ) : null}
+            </>
+          )}
+        </React.Fragment>
+      );
+    });
 
   return (
     <div
@@ -94,12 +212,12 @@ const ReplyMessage = ({ fetchMoreData, hasMore }: any) => {
       style={{
         overflowY: "auto",
         display: "flex",
-        flexDirection: "column-reverse",
+        flexDirection: isNewestAtTop ? "column" : "column-reverse",
       }}
       className="h-full w-full overflow-x-hidden pb-[15px]"
     >
       <InfiniteScroll
-        dataLength={replies?.length}
+        dataLength={replies?.length || 0}
         next={fetchMoreData}
         hasMore={hasMore}
         loader={
@@ -109,120 +227,23 @@ const ReplyMessage = ({ fetchMoreData, hasMore }: any) => {
         }
         style={{
           display: "flex",
-          flexDirection: "column-reverse",
+          flexDirection: isNewestAtTop ? "column" : "column-reverse",
           overflowY: "hidden",
           overflowX: "hidden",
         }}
         scrollableTarget="scrollableDivs"
-        inverse={true}
+        inverse={!isNewestAtTop}
       >
-        {replies?.map((item: any, index: number) => {
-          const nextMessage = replies[index + 1];
-          const shouldShowAvatar =
-            !nextMessage || nextMessage.user_id !== item.user_id;
-
-          const isSaved = bookmarks?.some((b: any) => b.id === item.id);
-
-          return (
-            <React.Fragment key={index}>
-              <>
-                {isEditReply && threadReply?.id === item?.id ? (
-                  <div
-                    className={`flex mb-5 gap-2 mt-2 z-10 bg-white px-2 py-3 bg-blue-50 w-full`}
-                  >
-                    <UserAvatar item={item} size="sm" className="mb-2" />
-
-                    <EditReplyMessageBox
-                      subscription={state?.replySubscription}
-                      sendMessage={handleEditMessage}
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <ReplyMessages
-                      item={item}
-                      shouldShowAvatar={shouldShowAvatar}
-                      setPopupId={setPopupId}
-                      popupId={popupId}
-                    />
-
-                    {item.is_pinned ? (
-                      <div className="flex items-center gap-2 bg-yellow-50 pl-10 text-[13px] font-semibold text-blue-100 pt-2">
-                        <Pin size={13} className="text-[#667085] mt-[3px]" />
-                        Pinned by{" "}
-                        {user?.email === item?.pinned_details?.email
-                          ? "you"
-                          : item?.pinned_details?.username}
-                      </div>
-                    ) : isSaved ? (
-                      <div className="flex items-center gap-2 bg-primary-50 pl-10 text-[13px] font-bold text-blue-100 pt-2">
-                        <BookmarkFilledIcon
-                          fontSize={13}
-                          className="text-[#667085]"
-                        />
-                        Saved for Later
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </>
-            </React.Fragment>
-          );
-        })}
-
-        {thread && (
-          <div className="px-3 mt-4 mb-2">
-            {thread?.type === "thread" ? (
-              <Thread item={thread} compact />
-            ) : (
-              <div className="flex">
-                <UserAvatar
-                  item={thread}
-                  size="sm"
-                  className="mr-2"
-                  alt="avatar"
-                />
-
-                <div>
-                  <div className="w-full flex items-center gap-2">
-                    <span className="font-bold text-[15px] text-[#1D2939]">
-                      {thread?.username || thread?.email}
-                    </span>
-
-                    <span className="text-xs text-[#98A2B3]">
-                      {new Date(thread?.created_at).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                    </span>
-                  </div>
-
-                  <div className="relative flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <MessageItem item={thread} />
-
-                      <span className="text-[9px] text-neutral-500">
-                        {thread?.edited ? "(edited)" : ""}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Show horizontal divider with "35 replies" after the first item */}
-            {replies?.length > 0 && (
-              <div className="flex items-center my-3 mt-5">
-                <hr className="flex-grow border-t border-gray-200" />
-                <span className="text-xs text-gray-500 mx-2 whitespace-nowrap">
-                  {replies?.length}{" "}
-                  {replies?.length === 1 ? "reply" : "replies"}
-                </span>
-                <hr className="flex-grow border-t border-gray-200" />
-              </div>
-            )}
-          </div>
+        {isNewestAtTop ? (
+          <>
+            {renderThreadHeader()}
+            {renderReplyItems()}
+          </>
+        ) : (
+          <>
+            {renderReplyItems()}
+            {renderThreadHeader()}
+          </>
         )}
       </InfiniteScroll>
     </div>

@@ -7,6 +7,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
+import { ArrowUpDown } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { DataContext } from "~/store/GlobalState";
 import { ACTIONS } from "~/store/Actions";
@@ -17,6 +18,7 @@ import { AddMembersModal } from "./add-members-modal";
 import { ViewMembersModal } from "./view-members-modal";
 import PinnedMessagesModal from "../pinned-messages/pinned-messages-modal";
 import { useRBAC } from "~/hooks/useRBAC";
+import { useConversationOrder } from "~/hooks/use-conversation-order";
 
 interface MenuDropdownProps {
   isOpen: boolean;
@@ -32,6 +34,7 @@ const MenuDropdown = ({ isOpen, onClose, participants }: MenuDropdownProps) => {
   const [addMembersOpen, setAddMembersOpen] = useState(false);
   const [viewMembersOpen, setViewMembersOpen] = useState(false);
   const [pinsOpen, setPinsOpen] = useState(false);
+  const { isNewestAtTop, toggleOrder } = useConversationOrder();
   const params = useParams();
   const router = useRouter();
   const channelId = params.id as string;
@@ -153,6 +156,19 @@ const MenuDropdown = ({ isOpen, onClose, participants }: MenuDropdownProps) => {
               }}
             >
               Search
+            </div>
+
+            <div
+              className={menuItemClass}
+              onClick={() => {
+                toggleOrder();
+                onClose();
+              }}
+            >
+              <span>
+                {isNewestAtTop ? "Show oldest at top" : "Show newest at top"}
+              </span>
+              <ArrowUpDown className="w-4 h-4 text-[#667085]" />
             </div>
 
             <div className={dividerClass} />
