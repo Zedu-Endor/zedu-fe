@@ -92,7 +92,11 @@ export const ThreadItem = ({ group }: ThreadItemProps) => {
                 </div>
               ) : null}
 
-              <Message item={item} shouldShowAvatar={shouldShowAvatar} />
+              <Message
+                item={item}
+                shouldShowAvatar={shouldShowAvatar}
+                group={group}
+              />
             </div>
           );
         })}
