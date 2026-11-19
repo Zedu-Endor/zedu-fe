@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState, useCallback } from "react";
+import { useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchCards } from "~/components/search/search-cards";
 import { SearchCardsSkeleton } from "~/components/search/search-cards-skeleton";
@@ -17,6 +17,7 @@ import {
 import { cn } from "~/lib/utils";
 import { searchMessages, searchUsers } from "~/lib/search/api";
 import { buildMessageSearchQuery } from "~/lib/search/query";
+import { SEARCH_CHANNEL_PARAM } from "~/lib/search/results-href";
 import type { MessageSearchResult, UserSearchResult } from "~/lib/search/types";
 
 import { showError } from "~/components/toast/sonner";
@@ -83,12 +84,14 @@ const SearchPaginationLink = ({
 export default function Search() {
   const searchParams = useSearchParams();
   const baseQuery = searchParams.get("query");
+  // Set when the search was made from inside a channel (search-bar.tsx).
+  const scopedChannel = searchParams.get(SEARCH_CHANNEL_PARAM) || undefined;
   const [results, setResults] = useState<CombinedResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     type: "messages" as "messages" | "people" | undefined,
     from: undefined as string | undefined,
-    channel: undefined as string | undefined,
+    channel: scopedChannel,
     date: undefined as { type: string; value: string } | undefined,
     sortBy: "relevance" as "relevance" | "newest" | "oldest" | string,
   });
@@ -147,6 +150,24 @@ export default function Search() {
     filters.date,
     filters.sortBy,
   ]);
+
+  // A new search from another channel (or from outside one) while this page
+  // is open starts again from that channel's scope. SearchFilters remounts
+  // with the same key, so its chips match.
+  const lastScopedChannel = useRef(scopedChannel);
+  useEffect(() => {
+    if (lastScopedChannel.current === scopedChannel) return;
+    lastScopedChannel.current = scopedChannel;
+    setResults([]);
+    setFilters({
+      type: "messages",
+      from: undefined,
+      channel: scopedChannel,
+      date: undefined,
+      sortBy: "relevance",
+    });
+    setCurrentPage(1);
+  }, [scopedChannel]);
 
   useEffect(() => {
     if (baseQuery && orgData?.id) {
@@ -225,6 +246,8 @@ export default function Search() {
         )}
 
         <SearchFilters
+          key={scopedChannel ?? ""}
+          initialChannel={scopedChannel}
           onFilterChange={handleFilterChange}
           channels={channels || []}
           users={filterUsers}
